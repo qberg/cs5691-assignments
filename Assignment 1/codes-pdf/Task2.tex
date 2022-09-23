@@ -1,0 +1,99 @@
+\section{Linear Model for Regression using Polynomial Basis Functions}
+\subsection{\textcolor{teal}{Python Code}}
+
+\begin{minted}[frame=lines, linenos, fontsize=\large]
+{python}
+
+import pandas as pd
+import numpy as np
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
+import random
+from matplotlib import cm
+#polynomial basis function regression
+degree = 6
+lamb = 0
+batch = 500 
+train = int(0.7*batch)   #70% of data
+test = int(0.2*batch)   #20 % of data
+valid = batch-(train+test)  #10 % of data   
+
+
+#generating polynomial combinations
+def polybasisfun(vec,deg):
+    def degcomb(vec,deg):
+        if deg == 0:
+            return [1]
+        if deg == 1:
+            return vec
+        if len(vec) == 1:
+            return [vec[0]**deg]
+        u = []
+        for i in range(deg+1):
+            u+=([(vec[0]**(i))*x for x in (degcomb(vec[1:],deg-i))])
+        return u
+    u = np.array([1])
+    for i in range(1,deg+1):
+        u=np.append(u,degcomb(vec,i))
+    return u
+f0 = pd.read_csv('function1_2d.csv')
+odata = f0.to_numpy()
+np.random.shuffle(odata)
+data = odata[:train,1:3]
+validata = odata[-(valid):,1:3]
+testdata = odata[-(valid+test):-(valid),1:3]
+yv = odata[-(valid):,3]
+yt = odata[-(valid+test):-(valid),3]
+X = np.apply_along_axis(polybasisfun,1,data,degree)
+yd = odata[:train,3]
+w = ((np.linalg.inv((lamb*np.eye(np.shape(X)[1]))+((np.transpose(X))@X)))
+                                                 @((np.transpose(X))@yd))
+
+def output(v,deg,w):
+    return (w@(np.transpose(polybasisfun(v,deg))))
+    
+yp = np.apply_along_axis(output,1,data,deg=degree,w=w)
+yvp = np.apply_along_axis(output,1,validata,deg=degree,w=w)
+ytp = np.apply_along_axis(output,1,testdata,deg=degree,w=w)
+print('ERMS_training = %f'%(np.linalg.norm((yp-yd),2)/np.sqrt(train)))
+print('ERMS_test = %f'%(np.linalg.norm((ytp-yt),2)/np.sqrt(test)))
+print('ERMS_valid = %f'%(np.linalg.norm((yvp-yv),2)/np.sqrt(valid)))
+x = np.linspace(min(data[:,0]),max(data[:,0]),200)
+y = np.linspace(min(data[:,1]),max(data[:,1]),200)
+X,Y=np.meshgrid(x,y)
+Z = (np.array([output([i,j],degree,w) for i,j in  
+     zip(np.ravel(X),np.ravel(Y))])).reshape(Y.shape)
+fig = plt.figure(figsize=(16,12))
+ax = plt.axes(projection='3d')
+ax.plot_surface(X,Y,Z,color='red', alpha=0.2,)
+ax.scatter(data[:,0],data[:,1],yd,alpha=1,color='black',linewidths=1)
+ax.set_xlabel('X-axis(x1)',fontsize = 15) 
+ax.set_ylabel('Y-axis(x2)',fontsize = 15) 
+ax.set_zlabel('Z-axis(y)',fontsize = 15)
+ax.set_title("batch size = {} | degree = {} | lambda = {}".format(batch,degree,
+             lamb),fontsize = 20)
+plt.show()
+
+fig1 = plt.figure(figsize=(9,9))
+plt.scatter(yd,yp,marker='x')
+plt.title('training',fontsize=20)
+plt.xlabel('target',fontsize=20)
+plt.ylabel('predicted',fontsize=20)
+fig2 = plt.figure(figsize=(9,9))
+plt.scatter(yt,ytp,marker='x')
+plt.title('test',fontsize=20)
+plt.xlabel('target',fontsize=20)
+plt.ylabel('predicted',fontsize=20)
+fig3 = plt.figure(figsize=(9,9))
+plt.scatter(yv,yvp,marker='x')
+plt.title('validation',fontsize=20)
+plt.xlabel('target',fontsize=20)
+plt.ylabel('predicted',fontsize=20)
+
+
+
+
+
+
+
+\end{minted}

@@ -1,0 +1,85 @@
+%Reneeth @BS17B025
+%To create a pdf with the python environment
+
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[a4paper, margin=1in]{geometry}
+
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    filecolor=magenta,      
+    urlcolor=green,
+}
+
+\usepackage[dvipsnames]{xcolor}
+\definecolor{green}{RGB}{0,128,0}
+\definecolor{teal}{RGB}{0,128,128}
+\definecolor{limegreen}{RGB}{200, 130, 110}
+\definecolor{cyan}{RGB}{150,200,210}
+
+
+\renewcommand{\thesection}{\Roman{section}}
+
+
+\usepackage{minted}
+\large
+\title{Programming Assignment 1}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+\begin{titlepage}
+	\begin{center}
+    \line(1,0){300}\\
+    [0.65cm]
+	\huge{\bfseries Programming Assignment I}\\
+	\line(1,0){300}\\
+	\textsc{\Large CS5691: Pattern Recognition and Machine Learning}\\
+	\textsc{\large{Team 17 CCS Section Spring 2021}}\\
+	\textsc{ \small{\today}}\\
+	[5.5cm]     
+	\end{center}
+	\begin{flushright}
+		\textsc{\Large Aanand Krishnan\\\small{BE17B001}}\\
+		[0.5cm]
+		\textsc{\Large Manoranjan J\\ \small{NA17B112}}\\
+		[0.5cm]
+		\textsc{\Large Reneeth Krishna MG\\\small{BS17B025}}
+	\end{flushright}
+\end{titlepage}
+\tableofcontents
+\newpage
+
+
+\input{Task1}
+
+\newpage
+
+\input{Task2}
+
+\newpage
+
+\input{Task3}
+
+%\newpage
+
+\input{DirectLinks}
+
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+

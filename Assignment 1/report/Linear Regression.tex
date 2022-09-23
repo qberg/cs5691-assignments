@@ -1,0 +1,69 @@
+\section*{Linear Regression}
+
+A vital question in any field of study is the very necessity of the field itself. Along those lines, one could pose, why do we need machine learning rather than an algorithm that could carry out the task at hand? The necessity for machine learning arises out of the complexity of the problem and the requirement of adaptivity. Several tasks that are performed routinely by humans such as speech recognition become too complex when asked to program. On the other hand, there are tasks that become highly complex because of the large amount of data involved in them. Making sense of data is a fundamental requirement of science and machines with ever increasing processing power are the suitable tools for pattern recognition in large and complex data. 
+
+A machine learning approach involves taking in input data, referred to as the \textit{training set} and using it as a learning medium for prediction using new, unseen data called the \textit{test set}. The learning phase can be \textit{supervised}, \textit{unsupervised} or \textit{reinforced}. Regression is a type of supervised learning, where the desired output consists of one or more continuous variables. This report presents the results of various linear models for univariate, bivariate and multivariate data implemented in python.
+
+\subsection*{Underlying Mathematical Framework of the Models}
+
+\textit{\textbf{The discussion that follows is based on our understanding of the chapters 1 and 3 from the book\cite{Bishop} and is added here to make the report as self contained as possible}}. The name 'linear regression' comes with the caveat of the assumption that the method is applicable only in fitting linear functions. But as will be seen in this report, it is an extremely powerful tool that can be used for fitting a wide range of functions, both linear and non linear. 
+\\
+\\
+\noindent A training data set of $N-samples$ in supervised learning takes the general form,
+\begin{align*}
+    D &= \{(\mathbf{x}_{1}, y_{1}), (\mathbf{x}_{2}, y_{2}), \dots, (\mathbf{x}_{N}, y_{N})\}
+    \intertext{Where, $\mathbf{x}_{i} \in \mathbb{R}^d$ and $y_i \in \mathbb{R}$. The $d-dimensional$ space is referred to as the \textit{feature space} and $y_i$ are the various labels associated with the data.}
+\end{align*}
+\noindent After learning from the data set, the goal is to predict $y$ for an unknown $\mathbf{x}$. A \textbf{basis function} is one which does this job. The simplest one among such functions is,
+\begin{align*}
+    f(\mathbf{x}, \mathbf{w}) &= w^{T}X = \sum_{n=1}^{d} w_{i}{x}_i \tag{$w^d \in \mathbb{R}^d$ }\\
+    \intertext{A more general form can be defined with the help of the function $\phi : \mathbb{R}^d \longrightarrow \mathbb{R}^M$,}
+    f(\mathbf{x}, \mathbf{w}) &= w^{T} \phi(\mathbf{x}) = \sum_{n=1}^{M} w_{i} \phi_{i}(\mathbf{x})
+\end{align*}
+The characteristic to be noted here is that $\phi(\mathbf{x})$ can be a non-linear function but $w \in \mathbb{R}^M$ is always linear, hence the name linear regression. The basis function can be of various types such as identity function, polynomial function, radial basis function, wavelets and such. Solving such problems means finding the vector $w$.
+\\
+\\
+\noindent Let $\mathbf{Z} = \phi(\mathbf{x})$. Then the optimum solution for $w$ is given by,
+\begin{align*}
+    min_w\left((y - \mathbf{Z}w)^T (y - \mathbf{Z}w)\right) \iff \mathbf{Z}^T\mathbf{Z}w = \mathbf{Z}^Ty
+\end{align*}
+\noindent  In practical problems the chance of getting a square matrix (i.e) a matrix where features and the samples available are same is very rare and thus there won't be any exact solutions. Geometrically, the best solutions then available are the orthogonal projections and the above equation represents exactly that.
+\\
+\\
+\noindent \textbf{Regularization} term is added to the objective function to avoid overfitting. A \textit{ridge regressor} is one where the L2 norm of the parameter $w$ is added to the objective function. Therefore to find the optimum $w$,
+\begin{equation*}
+    min_w\left[(y - \mathbf{Z}w)^T (y - \mathbf{Z}w) + \lambda w^Tw \right] \tag{$\lambda \ge 0 $} 
+\end{equation*}
+
+ \noindent Where $\lambda$  is called the hyperparameter and since it is an positive quantity,
+\begin{equation*}
+    \exists v : \lambda = v^2
+\end{equation*}
+ 
+The columns of $\mathbf{Z}$ are $d-vectors$ in the vector space $\mathbb{R}^N$. If we are to embed this space in to a larger space $\mathbb{R}^{N+d}$ by lengthening each of the column vectors. Such a lengthening of column vectors resolves any collinearity among vectors that was present in the $N-dimensional$ space.
+
+\begin{equation*}
+    \mathbf{Z}_* = \begin{pmatrix}
+               \mathbf{Z} \\
+               vI
+            \end{pmatrix}
+\end{equation*}
+
+Similarly,
+
+\begin{equation*}
+    y_* = \begin{pmatrix}
+           y \\
+           0_{p \times 1}
+          \end{pmatrix} 
+\end{equation*}
+\\
+The following statement can be clearly verified by matrix multiplication,
+\begin{equation*}
+    (y_* - \mathbf{Z}_*)^T(y_* - \mathbf{Z}_*) = (y - \mathbf{Z}w)^T (y - \mathbf{Z}w) + \lambda w^Tw
+\end{equation*}
+Therefore,
+\begin{equation*}
+     min_w\left[(y - \mathbf{Z}w)^T (y - \mathbf{Z}w) + \lambda w^Tw \right] \iff \mathbf{Z}_{*}^T\mathbf{Z}w = \mathbf{Z}^Ty_{*}
+\end{equation*}
+The means by which the problem of solutions to the system of linear equations is converted in to a minimization problem as described above is generally referred to as the \textit{Tikhonov regularization}.

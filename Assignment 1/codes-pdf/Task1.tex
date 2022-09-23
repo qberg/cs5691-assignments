@@ -1,0 +1,99 @@
+\section{Polynomial Curve Fitting}
+\subsection{\textcolor{teal}{Python Code}}
+
+\begin{minted}[frame=lines, linenos, fontsize=\large]
+{python}
+import pandas as pd
+import numpy as np
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
+import random
+from matplotlib import cm
+
+def process_dataset_1(degree, lamb, batch):
+    
+    train = int(0.7*batch)   #70% of data
+    valid = int(0.2*batch)   #20 % of data
+    test = int(batch-(train+valid))  #10 % of data   
+    
+    #generating polynomial combinations
+    def polybasisfun(vec,deg):
+        def degcomb(vec,deg):
+            if deg == 0:
+                return [1]
+            if deg == 1:
+                return vec
+            if len(vec) == 1:
+                return [vec[0]**deg]
+            u = []
+            for i in range(deg+1):
+                u+=([(vec[0]**(i))*x for x in (degcomb(vec[1:],deg-i))])
+            return u
+        u = np.array([1])
+        for i in range(1,deg+1):
+            u=np.append(u,degcomb(vec,i))
+        return u
+    
+    # Read data from csv file
+    f0 = pd.read_csv('datasets/function1.csv')
+    odata = f0.to_numpy()
+    np.random.shuffle(odata)
+    
+    # split into train,validate,test
+    data = odata[:train,1:2]
+    validata = odata[-(valid):,1:2]
+    testdata = odata[-(valid+test):-(valid),1:2]
+    yd = odata[:train,2]
+    yv = odata[-(valid):,2]
+    yt = odata[-(valid+test):-(valid),2]
+    
+    # formulate X matrix
+    X = np.apply_along_axis(polybasisfun,1,data,degree)
+    
+    # calculate weights
+    w = ((np.linalg.inv((lamb*np.eye(np.shape(X)[1]))+((np.transpose(X))@X)))@((np.transpose(X))@yd))
+    
+    
+    # Get predictions
+    def output(v,deg,w):
+        return (w@(np.transpose(polybasisfun(v,deg))))
+    yp = np.apply_along_axis(output,1,data,deg=degree,w=w)
+    yvp = np.apply_along_axis(output,1,validata,deg=degree,w=w)
+    ytp = np.apply_along_axis(output,1,testdata,deg=degree,w=w)
+    
+    
+    print('ERMS_training = %f'%(np.linalg.norm((yp-yd),2)/np.sqrt(train)))
+    print('ERMS_test = %f'%(np.linalg.norm((ytp-yt),2)/np.sqrt(test)))
+    print('ERMS_valid = %f'%(np.linalg.norm((yvp-yv),2)/np.sqrt(valid)))
+    
+    
+    x = np.linspace(min(data),max(data),50)
+    x = np.reshape(x,(x.shape[0],1))
+    y = np.apply_along_axis(lambda x:output(x,degree,w),1,x)
+    
+    
+    fig0 = plt.figure(figsize=(9,9))
+    plt.plot(x,y,color='red')
+    plt.scatter(data,yd,color='blue')
+    plt.title("degree = {} | lambda = {}".format(degree,lamb),fontsize = 20)
+    plt.xlabel('X-axis(x)')
+    plt.ylabel('Y-axis(y)')
+    
+    
+    return np.linalg.norm((yp-yd),2)/np.sqrt(train), np.linalg.norm((ytp-yt),2)/np.sqrt(test), np.linalg.norm((yvp-yv),2)/np.sqrt(valid)
+    
+################################# Main Code ##################################
+
+# # Call function to experiment dataset 1
+Degree = [2,3,6,9]
+lamb = [0,10e-2,10e-1,10,10e2]
+batch = [10,200]
+
+Erms = []
+# Experiment with Degree
+for l in lamb:
+    erms = process_dataset_1(25, l, 350)
+    Erms.append(erms)
+    
+
+\end{minted}
