@@ -1,0 +1,322 @@
+\section{Pattern classification on linearly separable data}
+\subsection{\textcolor{teal}{Python Code}}
+
+\begin{minted}[frame=lines, linenos, fontsize=\large]
+{python}
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix
+from mlxtend.plotting import plot_confusion_matrix
+from sklearn.metrics import accuracy_score
+
+#############################################################################
+# train data
+f = open('datasets/Dataset_1a/train.csv', 'r')
+    
+length = 0
+for line in f:
+        
+    d = [float(i) for i in line.split(',')]
+        
+    if length == 0:
+        data = np.array(d)
+        data = data[np.newaxis,:]
+    else:
+        d = np.array(d)
+        d = d[np.newaxis,:]
+        data = np.append(data,d,axis=0)
+    length = length+1
+    
+f.close()
+       
+train_data = pd.DataFrame(data)
+    
+# shuffle dataset
+# train_data = train_data.sample(frac=1)
+
+# get train data
+train_data = np.array(train_data)
+
+# test data
+f = open('datasets/Dataset_1a/dev.csv', 'r')
+    
+length = 0
+for line in f:
+        
+    d = [float(i) for i in line.split(',')]
+        
+    if length == 0:
+        data = np.array(d)
+        data = data[np.newaxis,:]
+    else:
+        d = np.array(d)
+        d = d[np.newaxis,:]
+        data = np.append(data,d,axis=0)
+    length = length+1
+    
+f.close()
+       
+test_data = pd.DataFrame(data)
+
+# shuffle dataset
+# test_data = test_data.sample(frac=1)
+
+# get test data
+test_data = np.array(test_data)
+##############################################################################
+
+# Split training data
+# length of data for fit
+train_len = int(np.shape(train_data)[0])
+val_len = int(np.shape(test_data)[0]*0.5)
+test_len = int(np.shape(test_data)[0]*0.5)
+
+X_train = train_data[:,0:2]
+X_val = test_data[0:val_len,0:2]
+X_test = test_data[val_len:val_len+test_len,0:2]
+
+y_train = train_data[:,2]
+y_val = test_data[0:val_len,2]
+y_test = test_data[val_len:val_len+test_len,2]
+
+# ##############################################################################
+# Build KNN classifier
+y_pred = []
+def KNN_classifier(K, x):
+    """
+    Parameters
+    ----------
+    K : value of nearest neighbours
+    x : feature vector
+
+    Returns
+    -------
+    None.
+    """
+    # find distance between feature vector and training data
+    dist = np.linalg.norm(x-X_train,axis=1)
+    
+    # get the top index for the minimum distance
+    min_dist_index = np.argsort(dist)   
+    topk = min_dist_index[0:K]
+    
+    # get class of corresponding class
+    K_class = y_train[topk]
+    
+    # get count of each class
+    unique_class, counts = np.unique(K_class, return_counts=1)
+    
+    # get the index of max counts
+    max_count = np.argmax(counts)
+    
+    # choose that as the class
+    y_pred.append(unique_class[max_count])
+
+K = 15
+# test on training data
+for i in range(0, train_len):
+    KNN_classifier(K, X_train[i])
+
+y_pred = np.array(y_pred)    
+
+train_accuracy = accuracy_score(y_train,y_pred)*100
+print("training accuracy: " , train_accuracy)
+
+# plot confusion matrix for training data
+c_matrix  = confusion_matrix(y_train, y_pred)
+fig, ax = plot_confusion_matrix(conf_mat=c_matrix,figsize=(7,7),cmap=plt.cm.RdYlBu_r)
+ax.set(title = "Confusion Matrix")
+plt.show()
+
+y_pred = []
+# test on validation data
+for i in range(0, val_len):
+    KNN_classifier(K, X_val[i])
+        
+y_pred = np.array(y_pred)    
+
+val_accuracy = accuracy_score(y_val,y_pred)*100
+print("validation accuracy: " , val_accuracy)
+
+y_pred = []
+# test on test data
+for i in range(0, test_len):
+    KNN_classifier(K, X_test[i])
+        
+y_pred = np.array(y_pred)    
+
+test_accuracy = accuracy_score(y_test,y_pred)*100
+print("validation accuracy: " , test_accuracy)
+
+# plot confusion matrix for test data
+c_matrix  = confusion_matrix(y_test, y_pred)
+fig, ax = plot_confusion_matrix(conf_mat=c_matrix,figsize=(7,7),cmap=plt.cm.RdYlBu_r)
+ax.set(title = "Confusion Matrix")
+plt.show()
+
+# Decision Region Plots #####################################################
+# define bounds of the domain
+min1, max1 = X_train[:, 0].min()-1, X_train[:, 0].max()+1
+min2, max2 = X_train[:, 1].min()-1, X_train[:, 1].max()+1
+
+# define the x and y scale
+x1_grid = np.arange(min1, max1, 0.1)
+x2_grid = np.arange(min2, max2, 0.1)
+
+x1_grid, x2_grid = np.meshgrid(x1_grid, x2_grid)
+
+c1, c2 = x1_grid.flatten(), x1_grid.flatten()
+c1, c2 = x1_grid.reshape((len(c1), 1)), x2_grid.reshape((len(c2), 1))
+
+x = np.hstack((c1,c2))
+
+y_pred = []
+for i in range(0, np.shape(x)[0]):
+    KNN_classifier(K, x[i,:])
+
+y_pred = np.array(y_pred)
+
+x3_grid = y_pred.reshape(x1_grid.shape)
+
+fig = plt.figure()
+ax = fig.add_subplot(111)
+ax.contourf(x1_grid, x2_grid, x3_grid, cmap='Paired')
+ax.scatter(X_train[:,0],X_train[:,1],marker='x')
+ax.set_xlabel('x1',fontsize=20)
+ax.set_ylabel('x2',fontsize=20)
+ax.set_title('KNN model with K = 15', fontsize=20)
+
+
+##############################################################################
+
+# Naive Bayes classifier
+# P(x/y=yi) = N(x/mui,ci)
+unique_class, class_index, counts = np.unique(y_train, return_inverse=1,return_counts=1)
+
+# Compute mean and variance for each class
+mu = np.zeros((np.shape(unique_class)[0],2))
+variance = np.zeros((np.shape(unique_class)[0],2))
+for i in range(0,np.size(unique_class)):
+    index = np.where(class_index==i)
+    mu[i,:] = np.mean(X_train[index,:],axis=1)
+    variance[i,:] = np.var(X_train[index,:],axis=1)
+
+# Gaussian function
+N = lambda mu,C,x : ((1/(((2*np.pi)**(np.shape(unique_class)[0]/2))
+*np.linalg.det(C)**(1/2)))*np.exp(-0.5*(((x-mu).T)@np.linalg.inv(C)@(x-mu))))     
+##############################################################################
+# Comment all other case when testing 1 case
+
+# case 1: when covariance matrix is sigma**2[I] #############################
+var_avg = (np.mean(np.sum(variance,axis=1)/2.0))
+
+covar = np.eye(np.shape(X_train)[1])*var_avg
+#############################################################################
+# case 2: when covariance matrix is same but has different diaganol elements
+covar = np.zeros((np.shape(unique_class)[0],
+np.shape(X_train)[1],np.shape(X_train)[1]))
+for i in range(0,np.shape(unique_class)[0]):
+    covar[i,:,:] = np.diag(variance[i,:])
+covar = np.mean(covar,axis=0)
+#############################################################################
+# case 3: when covariance matrix is different but has diaganol elements
+covar = np.zeros((np.shape(unique_class)[0],
+np.shape(X_train)[1],np.shape(X_train)[1]))
+for i in range(0,np.shape(unique_class)[0]):
+    covar[i,:,:] = np.diag(variance[i,:])
+
+
+prior = counts/train_len
+
+# test on train data
+y_pred = np.zeros((train_len,))
+for i in range(train_len):
+    decision = []
+    for j in range(0,np.shape(unique_class)[0]):
+        decision.append(N(mu[j],covar[j,:,:],X_train[i,:])*prior[j])
+    y_pred[i] = np.argmax(decision)
+
+train_accuracy = accuracy_score(y_train,y_pred)*100
+print("training accuracy: " , train_accuracy)
+
+# plot confusion matrix for training data
+c_matrix  = confusion_matrix(y_train, y_pred)
+fig, ax = plot_confusion_matrix(conf_mat=c_matrix,figsize=(7,7),cmap=plt.cm.RdYlBu_r)
+ax.set(title = "Confusion Matrix")
+plt.show()
+
+# test on validation data
+y_pred = np.zeros((val_len,))
+for i in range(val_len):
+    decision = []
+    for j in range(0,np.shape(unique_class)[0]):
+        decision.append(N(mu[j],covar[j,:,:],X_val[i,:])*prior[j])
+    y_pred[i] = np.argmax(decision)
+
+val_accuracy = accuracy_score(y_val,y_pred)*100
+print("validation accuracy: " , val_accuracy)
+
+# test on test data
+y_pred = np.zeros((test_len,))
+for i in range(test_len):
+    decision = []
+    for j in range(0,np.shape(unique_class)[0]):
+        decision.append(N(mu[j],covar[j,:,:],X_test[i,:])*prior[j])
+    y_pred[i] = np.argmax(decision)
+
+y_test = np.array(y_test)
+test_accuracy = accuracy_score(y_test,y_pred)*100
+print("test accuracy: " , test_accuracy)
+
+# plot confusion matrix for test data
+c_matrix  = confusion_matrix(y_test, y_pred)
+fig, ax = plot_confusion_matrix(conf_mat=c_matrix,figsize=(7,7),cmap=plt.cm.RdYlBu_r)
+ax.set(title = "Confusion Matrix")
+plt.show()
+
+# Decision Region Plots #####################################################
+# define bounds of the domain
+min1, max1 = X_train[:, 0].min()-1, X_train[:, 0].max()+1
+min2, max2 = X_train[:, 1].min()-1, X_train[:, 1].max()+1
+
+# define the x and y scale
+x1_grid = np.arange(min1, max1, 0.1)
+x2_grid = np.arange(min2, max2, 0.1)
+
+x1_grid, x2_grid = np.meshgrid(x1_grid, x2_grid)
+
+c1, c2 = x1_grid.flatten(), x1_grid.flatten()
+c1, c2 = x1_grid.reshape((len(c1), 1)), x2_grid.reshape((len(c2), 1))
+
+x = np.hstack((c1,c2))
+
+y_pred = np.zeros((np.shape(x)[0],))
+for i in range(np.shape(x)[0]):
+    decision = []
+    for j in range(0,np.shape(unique_class)[0]):
+        decision.append(N(mu[j],covar[j,:,:],x[i,:])*prior[j])
+    y_pred[i] = np.argmax(decision)
+
+x3_grid = y_pred.reshape(x1_grid.shape)
+
+fig = plt.figure()
+ax = fig.add_subplot(111)
+ax.contourf(x1_grid, x2_grid, x3_grid, cmap='Paired')
+ax.scatter(X_train[:,0],X_train[:,1],marker='x')
+ax.set_xlabel('x1',fontsize=20)
+ax.set_ylabel('x2',fontsize=20)
+ax.set_title('Naiyve Bayes Classifier', fontsize=20)
+
+# plot levl of curves of the gaussian functions
+for i in range(0,np.shape(unique_class)[0]):
+    x3_grid = []
+    for j in range(np.shape(x)[0]):
+        x3_grid.append(N(mu[i],covar[i,:,:],x[j,:]))
+    x3_grid = np.array(x3_grid)
+    x3_grid = x3_grid.reshape(x1_grid.shape)
+    contours = ax.contour(x1_grid, x2_grid, x3_grid, cmap='tab20b')
+    ax.clabel(contours, inline=1, fontsize=5)
+    
+\end{minted}

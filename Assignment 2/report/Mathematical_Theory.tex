@@ -1,0 +1,129 @@
+\section*{}
+\section*{Classification}
+  In the previous assignment we performed regression, in which the target variable was simply a real valued vector. However, in classification the task is of organizing data into categories for it's efficient use. A shorthand way of saying this would be, the output variable in regression takes continuous values, whereas in classification the output variables takes class labels. For the classification problem at hand, the input feature vector to the model takes numerical attributes. The task of the model then is to assign a class label for the given feature vector.
+ 
+ To build an intuition for the process of classification one could think of a numerical input that has only two features. \textit{For example}, height and weight of several individuals as input for classification as adult and child. Now the classification task is to assign a class (child or adult) to a new unlabelled observation. Such an 2D features input can be easily visualized and the class of a new observation can be inferred from the plots by a very reasonable assumption that the class of the unlabelled point is determined predominantly by nearby points of the training dataset. An interesting observation to note is that, there  was  no  intrinsic  geometry  or  vectors in the example of classification mentioned above or for any classification task for that matter, but by viewing them as vectors we get a geometric intuition that is extremely helpful.
+ 
+ However a severe pitfall of this approach is outlined in chapter one of Bishop. The author points out how with an increase in the number of features, the nearby distance we would scan to make an classification also increases drastically. Such an increase in distance demands an equally drastic increase in number of training data available, making the process infeasible for more than a few featured input. This difficulties arising in higher dimensions is referred to as \textit{curse of dimensionality} in literature. 
+ 
+ This curse however doesn't impair our ability to build machine learning models for real world data that has several thousands features. Bishop, points out a reason for this is that we could essentially capture the variance shown by the data with a subset of features projected on to a different space which has lower dimensions, thus confining the data. Now that we are aware of the effect of dimension, a brief account of how we could model a classification task is provided below. 
+ 
+ \subsection*{Bayesian Decision Theory}
+ 
+ One could abstract the entirety of the models used in machine learning as being developed from minimising different kind of loss functions. In function approximation we minimised the squared distance loss function to make predictions. Bayesian Decision Theory for classification task, is based on a probabilistic loss function. In other words the problem is posed in Probabilistic terms.  \par
+ A supervised classification task involves labelled training data,
+ \[D = \{(x_1,y_1),(x_2,y_2),\dots, (x_n,y_n)\}\]. The training data is used for learning, following which one of the following methods is followed for prediction,
+ 
+ \begin{itemize}
+     \item Using Bayes Theorem,
+                   \[  p(Y = y_i|\bar{x}) = \frac{p(\bar{x}|y_i).p(y_i)}{p(x)}  \]
+            Now we estimate the posterior class probabilities $p(x|y)$. We can use the joint distribution $p(x,y)$. This kind of methods in which attention is paid to probability distributions of both $x$ and $y$ are known as \textit{generative models}.
+     \item In the previous case we were given an $x$, which needed classification. What if we could find a function $f$, that could map each inputs of $x$ to a class label? Such a function, $f$ is called \textit{discriminant}. This kind of models are shown to computationally efficient than the former. A discriminant function can be any one of the following,
+     \[
+         g_i(\bar{x}) = \begin{cases}  
+         
+                   p(Y=y_i|\bar{x}), \\
+                   
+                  p(\bar{x}|Y=y_i).p(Y=y_i), \\
+                  
+                  \ln{p(\bar{x}|Y=y_i)} + \ln{p(Y=y_i)}
+                  
+         \end{cases}
+     \]
+     
+     Where the class label $i$ is chosen for which $g_i(\bar{x})$ is maximum. The discriminant function can also be used to find the decision region for a class. $g_i(\bar{x}) - g_j(\bar{x}) = 0 $, gives the decision surface seperating the two classes $i$ and $j$.
+     
+ 
+ \end{itemize}
+ 
+ 
+ \subsubsection*{Gaussian Mixture Model}
+ 
+ This is a discriminant model. In determining the discriminant function several assumptions need to be made, one major assumption of this model is that,
+ \[
+ p(\bar{x}|y_i) = \sum_{q=1}^{Q} w_q \mathcal{N}(\bar{x}|\bar{\mu}_{iq},\bar{c}_{iq})
+ \]
+ That is, the class likelihood function is assumed to be a multimodal multivariate Gaussian distribution with $Q-$ peaks. Such an distribution better suits the real world data, for that too contains multiple peaks opposed to the unimodal Gaussian which has a single peak. $w_q$ is scaling factor to adjust for the peak of the distribution with the peak observed in data. 
+ 
+ \[\text{Number of parameters for class i} = Q_i\left(1 + d + \frac{d(d+1)}{2}\right)\]
+ 
+  We could further make assumptions to reduce the number of parameters such that the covariance matrices are equal or covariance matrices are diagonal (\textit{naive} Bayes classifier) and such. Posterior probability for a point to belong a Gaussian component of a particular class is denoted by $\gamma_{nq}$ and is also called the responsibility term. An expression for the responsibility term is,
+ 
+ \[ \gamma_{nq} = \frac{w_q\mathcal{N}(\bar{x}|\bar{\mu}_{q},\bar{c}_{q})}{\sum_{m=1}^{Q}w_m\mathcal{N}(\bar{x}|\bar{\mu}_{m},c_{m})} \]
+ 
+ Maximising this responsibility term using gradient descent we will be able to find out the various parameters of this model. An another advantage of GMM is there might be cases where two classes that are not linearly seperable have the same covariance matrix resulting in a linear decision boundary while using a single Gaussian thus resulting in a poor classification. However there is a hiccup in the parameter estimations for GMM, as it turns out the parameters of this model don't have closed form expression and hence an iterative method known as Expectation-Maximisation(EM) is used.
+ 
+ \newpage
+ \subsubsection*{Steps involved in EM method}
+ 
+ \begin{itemize}
+     \item [\textbf{Initialization}]
+     \item Instead of choosing random values, we divide the data into disjoint sets(clusters) using suitable algorithms such as K-Means. The number of clusters $K$ will be the the hyperparameter $Q$. The rest of the parameters can be estimated as follows,
+          \begin{align*}
+              N_q &= \text{No. of examples in the $q^{th}$ cluster}\\
+              w_q &= \frac{N_q}{N} \\
+              \gamma_{nq} &= \begin{cases}  
+                               $1$, &\text{if $\bar{x}_n$ \in $q^{th}$ cluster}, \\
+                               $0$, &\text{otherwise}
+                             \end{cases}\\
+              \bar{\mu}_{q} &= \frac{1}{N_q}\sum_{n=1}^{N}\gamma_{nq}.\bar{x}_n \\
+              c_q &= \frac{1}{N_q}\sum_{n=1}^{N}\gamma_{nq}(\bar{x}_n -  \bar{\mu}_{q}).(\bar{x}_n -  \bar{\mu}_{q})^t
+          \end{align*}
+      \item The set of initial parameters $\bar{\theta}^{old}$ is passed on to the next step.
+             \[ \bar{\theta}^{old} = \left\{w_q, \bar{\mu}_{q}, c_q    \right\}_{q=1}^{Q}\]
+             
+      \item [\textbf{Expectation}]
+      \item Update the responsibility term as follows,
+             \[\gamma_{nq} = \frac{w_q\mathcal{N}(\bar{x}_{n}|\bar{\mu}_{q},c_{q})}{\sum_{m=1}^{Q}w_m\mathcal{N}(\bar{x}_{n}|\bar{\mu}_{m},\c_{m})}\] 
+    
+      \item [\textbf{Maximization}]
+      \item Using the responsibility term obtained in the expectation step, we can estimate $N_q$ which can further be used in the expressions for the other parameters thus updating them all. 
+            \[N_q = \sum_{n=1}^{N} \gamma_{nq}\]
+      \item The new set of parameters are send on to the next step. The convergence can't be looked at because of the large number of parameters involved. Instead we use a threshold for the stopping criterion as explained in the next step.
+           \[ \bar{\theta}^{new} = \left\{w_q^{new}, \bar{\mu}_{q}^{new}, c_q^{new}    \right\}_{q=1}^{Q}\]
+      
+      \item[\textbf{Likelihood}]  
+      \item We estimate the log likelihood as follows,
+            \begin{align*}
+                \mathcal{L}(D)  &= \sum_{n=1}^{N} \ln{p(\bar{x}_n | \bar{\theta})} \\
+                                &= \sum_{n=1}^{N} \ln{\sum_{q=1}^{Q}\mathcal{N}(\bar{x}_n|\bar{\mu}_{q}^{new},c_{q}^{new})}
+            \end{align*}
+     \item We will look at the increase in likelihood for each updated set of parameters and stop when the difference is below a certain threshold. Else the previous steps are repeated. A guarantee of the EM method is that the the change in the log likelihood will always be positive.
+ \end{itemize}
+ 
+ \textbf{Note:} The parameters estimated using EM method are not unique, as what we obtain is a local maximum of the likelihood and not necessarily a global maximum. Hence, the value of the parameters estimated using this method depends on our initialization. Different values of $\bar{\theta}^{old}$  gives different estimates.
+ 
+ 
+ \subsubsection*{Naive Bayes Classifier}
+  This is a special case of the discriminative methods described above. In this model, the density function assumed is a multivariate gaussian function. There is one more important assumption which states that the features are conditionally stastically independent which means that the covariance matrix of the gaussian function is always diagonal which results in lesser parameters to estimate. This function may work well for unimodal data and data in which the features are independent. If the features $x_k$ of the input vector, $\bar{x} = (x_1,x_2,\dots,x_d)$ are independant then,
+  
+  \begin{align*}
+      p(\bar{x}|y_i) &= p(x_1,x_2,\dots,x_d | y_i) \\
+                    &= \prod_{k=1}^{d} p(x_k|y_i) \\
+                    &= \prod_{k=1}^{d} \mathcal{N}(x_k|\mu_{ik},c_{ik})
+  \end{align*}
+  
+ Mean and covariance are the parameters to be estimated for each class. Since the number of parameters may become high if we consider unique covariance matrices, we sometimes assume the covariance matrix to be same for all classes and in some cases we even assume the diagonal terms are same for the covariance matrices involved to reduce the number of parameters to estimate. These assumptions has its own limitations during the prediction though.
+
+ \subsubsection*{K Nearest Neighbours for density Estimation}
+ In this method we assume a different density function than the GMM/naive bayes models we looked at in the previous section. 
+ 
+ \[
+ p(\bar{x}|y_i) = \frac{K}{N.V}
+ \]
+ 
+ Here \textit{K} is the nearest neighbours to the point in consideration($\bar{x}$) and is fixed for a particular model. \textit{N} is the total number of examples for the class. \textit{V} is the volume that is to be determined which encloses all the K neighbours. Given a particular class and the value K, the only varying entity is the volume \textit{V} for different data points and this plays a role in determining the class for that particular point. This model comes under the non-parametric methods for density estimation which means that there is no weights which has to be optimised for the given data and the prediction of class is based on linear algebra and probability. Thus the class label of $\bar{x}$ upon simplification of the bayes rule is determined by:
+ 
+  \[
+ p(y|\bar{x}) = argmin(V_i)
+ \]
+ 
+ \subsubsection*{KNN classifier}
+ 
+ This model also comes under non-parametric method for density estimation. We will be assuming the same expression for $p(\bar{x}|y_i)$. But now we try to identify K nearest neighbours for a particular point in consideration based on all the examples and check the number of the neighbour points to different classes and assign the class which has the largest neighbours out of the K points. Thus the class label of $\bar{x}$ upon simplification of the bayes rule is determined by:
+ 
+   \[
+ p(y|\bar{x}) = argmax(K_i)
+ \]
+
+%------------------------------------------------------

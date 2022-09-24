@@ -1,0 +1,134 @@
+
+%Team 17 PRML 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% --------------------------------------------------------------------
+% Preamble
+% --------------------------------------------------------------------
+\documentclass[ fontsize=12pt,twoside]{scrartcl}	
+
+%\setmainfont{Times New Roman}
+\usepackage[letterpaper,pdftex]{geometry}	
+\setlength{\oddsidemargin}{5mm}			
+\setlength{\evensidemargin}{5mm}
+
+\usepackage[table]{xcolor}
+
+\usepackage[english]{babel}
+\usepackage[protrusion=true,expansion=true]{microtype}	
+\usepackage{amsmath,amsfonts,amsthm,amssymb}
+\usepackage{graphicx}
+\usepackage{pseudocode}
+
+%\usepackage{titlesec}
+%\titlespacing*{\section}{0ex}{0ex}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.75em}
+
+\usepackage[latin1]{inputenc}
+\usepackage{tikz}
+\usepackage{subcaption}
+\captionsetup{compatibility=false}
+%\usepackage[table]{xcolor}
+\usetikzlibrary{shapes,arrows}
+
+%Defining the table environment
+\setlength{\arrayrulewidth}{0.5mm}
+\setlength{\tabcolsep}{20pt}
+\renewcommand{\arraystretch}{1.25}
+
+
+
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=green,
+}
+
+% Defining the sections to have roman numerals
+\renewcommand{\thesection}{\Roman{section}} 
+%\renewcommand{\thesubsection}{\thesection.\Roman{subsection}}
+% --------------------------------------------------------------------
+% Definitions (do not change this)
+% --------------------------------------------------------------------
+\newcommand{\HRule}[1]{\rule{\linewidth}{#1}} 	% Horizontal rule
+
+\makeatletter							% Title
+\def\printtitle{%						
+    {\centering \@title\par}}
+\makeatother									
+
+\makeatletter							% Author
+\def\printauthor{%					
+    {\centering \Large \@author}}				
+\makeatother							
+
+% --------------------------------------------------------------------
+% Metadata (Change this)
+% --------------------------------------------------------------------
+\title{	\Large \textsc{ CS5691: Pattern Recognition and Machine Learning \\ 
+														Programming	Assignment II} 	
+		 	\\[2.0cm]								
+			\HRule{2pt} \\						
+			\LARGE \textbf{\uppercase{Pattern Classification}}	% Title
+			\HRule{2pt} \\ [0.5cm]	
+			\Large \today			
+		}
+
+ \author{
+		Aanand Krishnan {\textit{\small(BE17B001)}}\\	
+		Manoranjan J \textit{\small (NA17B112)}\\	
+        Reneeth Krishna MG \textit{\small (BS17B025)} \\
+        \texttt{Team 17 - CCS Section Spring 2021} \\
+}
+
+
+
+
+
+
+
+\begin{document}
+% ------------------------------------------------------------------------------
+% Maketitle
+% ------------------------------------------------------------------------------
+\thispagestyle{empty}		
+
+\printtitle					
+  	\vfill
+\printauthor				
+\newpage
+% ------------------------------------------------------------------------------
+% Begin document
+% ------------------------------------------------------------------------------
+\setcounter{page}{1}		
+
+
+%%%%%%%%%%%%%%%
+%														%
+% 			Main Contents            %
+%														%
+%%%%%%%%%%%%%%%
+\tableofcontents
+\listoftables
+\listoffigures
+
+\newpage
+\input{Mathematical_Theory}
+\input{Dataset_1a}
+\newpage
+\input{Dataset_1b}
+\newpage
+\input{Dataset_2a}
+\input{Dataset_2b}
+
+
+% ------------------------------------------------------------------------------
+% End document
+% ------------------------------------------------------------------------------
+\end{document}

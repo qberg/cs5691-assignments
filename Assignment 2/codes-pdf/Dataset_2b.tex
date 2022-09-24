@@ -1,0 +1,478 @@
+\section{Static Pattern Classification on Real World Dataset 2B}
+
+
+\subsection{\textcolor{teal}{Python Code}}
+
+\begin{minted}[frame=lines, linenos, fontsize=\large]
+{python}
+
+
+import numpy as np
+import pandas as pd
+import os
+from sklearn import preprocessing
+from sklearn.cluster import KMeans
+from matplotlib import pyplot as plt
+
+#extracting and parsing files tr
+#preprocessing : quantile transformation
+directory = 'Dataset_2B/coast/train'
+dataX = []
+for filename in os.listdir(directory):
+    f = open(directory+'/'+filename)
+    data =[]
+    for line in f:
+        data.append([float(x) for x in line.strip().split(' ')])
+    dataX+=(data)
+data1 = np.array(dataX)
+data1 = np.apply_along_axis(lambda x:np.append(x,np.array([1,0,0,0,0])),1,data1)
+X1 = data1[:,:-5]
+X1 = (preprocessing.QuantileTransformer(random_state=0)).fit_transform(X1)
+directory = 'Dataset_2B/forest/train'
+dataX = []
+for filename in os.listdir(directory):
+    f = open(directory+'/'+filename)
+    data =[]
+    for line in f:
+        data.append([float(x) for x in line.strip().split(' ')])
+    dataX+=(data)
+data2 = np.array(dataX)
+data2 = np.apply_along_axis(lambda x:np.append(x,np.array([0,1,0,0,0])),1,data2)
+X2 = data2[:,:-5]
+X2 = (preprocessing.QuantileTransformer(random_state=0)).fit_transform(X2)
+directory = 'Dataset_2B/mountain/train'
+dataX = []
+for filename in os.listdir(directory):
+    f = open(directory+'/'+filename)
+    data =[]
+    for line in f:
+        data.append([float(x) for x in line.strip().split(' ')])
+    dataX+=(data)
+data3 = np.array(dataX)
+data3 = np.apply_along_axis(lambda x:np.append(x,np.array([0,0,1,0,0])),1,data3)
+X3 = data3[:,:-5]
+X3 = (preprocessing.QuantileTransformer(random_state=0)).fit_transform(X3)
+directory = 'Dataset_2B/opencountry/train'
+dataX = []
+for filename in os.listdir(directory):
+    f = open(directory+'/'+filename)
+    data =[]
+    for line in f:
+        data.append([float(x) for x in line.strip().split(' ')])
+    dataX+=(data)
+data4 = np.array(dataX)
+data4 = np.apply_along_axis(lambda x:np.append(x,np.array([0,0,0,1,0])),1,data4)
+X4 = data4[:,:-5]
+X4 = (preprocessing.QuantileTransformer(random_state=0)).fit_transform(X4)
+directory = 'Dataset_2B/street/train'
+dataX = []
+for filename in os.listdir(directory):
+    f = open(directory+'/'+filename)
+    data =[]
+    for line in f:
+        data.append([float(x) for x in line.strip().split(' ')])
+    dataX+=(data)
+data5 = np.array(dataX)
+data5 = np.apply_along_axis(lambda x:np.append(x,np.array([0,0,0,0,1])),1,data5)
+X5 = data5[:,:-5]
+X5 = (preprocessing.QuantileTransformer(random_state=0)).fit_transform(X5)
+
+data = np.concatenate((data1,data2,data3,data4,data5),axis=0)
+
+#prior probabilities
+py1 = len(data1)/len(data)
+py2 = len(data2)/len(data)
+py3 = len(data3)/len(data)
+py4 = len(data4)/len(data)
+py5 = len(data5)/len(data)
+ppy = np.array([py1,py2,py3,py4,py5])  
+
+#hyperparameters
+threshold = 1e-10
+nclasses = 5
+#option for diagonal(opt=0) or full(opt=1) covariance matrix
+opt = int(input('covariance'))
+#number of clusters in each class
+q = list(map(int,input('clusters').split(' ')))
+
+# initialisation of parameters
+fweights = {}
+fmeans = {}
+fvariances = {}
+#GMM for each class
+def GMMperclass(X,q,threshold,opt):  #X = data q = cluster #hyperparameter
+    dim = X.shape[1]
+    N = len(X)
+    
+    #kmeans clustering
+    kmeans = KMeans(init='random',n_clusters=q,n_init=20,max_iter=800)
+    kmeans.fit(X)
+    response = np.zeros((N,q))
+    labl = kmeans.labels_
+    
+    #gamma matrix
+    for i in range(len(labl)):
+        response[i,labl[i]] = 1
+        
+    #gaussian for individual datapoint
+    def gauss(x,u,v):
+        dim = len(x)
+        num = ((np.reshape((x-u),(1,dim)))@((np.linalg.inv(v))@
+                                   (np.reshape((x-u),(dim,1)))))
+        num = -num/2
+        den = np.sqrt(((2*np.pi)**dim)*(np.linalg.det(v)))
+        return ((np.exp(num))/den)
+     
+    #gaussian for whole datapoints
+    def gaussmat(X,q,means,variances):
+        N,dim = X.shape
+        #Inverse of the covariance matrix
+        sigma_inv = np.linalg.inv(variances)     
+        mean_shift = np.reshape(X, (N, 1, dim) ) - np.reshape(means, (1,q, dim) )
+        #Normalisation term of the Gaussian dist
+        norm = np.sqrt(((2*np.pi)**dim)*np.linalg.det(variances))  
+        #Exponential term of the Gaussian
+        expo = np.exp(-0.5*(np.einsum("nkj,nkj->nk", np.einsum("nki,kij->nkj", 
+                                         mean_shift, sigma_inv),mean_shift)))  
+        return expo/norm
+    
+    #updating gamma=response update
+    def responseupdate(weights,X,q,means,variances):
+        N,dim = X.shape 
+        No = gaussmat(X,q,means,variances)
+        Num =  No * weights
+        Den = np.reshape(np.sum(Num, axis=1), (N, 1) )
+        return Num/Den
+
+    #estimation of log likelihoods
+    def llhd(weights,X,q,means,variances):
+        return np.sum(np.log(gaussmat(X,q,means,variances) @ weights))
+
+    ##initialisation
+    weights = np.einsum("ij -> j",response) / N
+    means = (((response).T) @ X)/ np.reshape((weights*N), (q, 1))
+    Nki = N*weights
+    mean_shifti = np.reshape(X, (N, 1, dim) ) - np.reshape(means, (1, q, dim) )
+    sigmai = np.einsum("nki,nkj->kij", np.einsum("nk,nki->nki", response,
+                   mean_shifti), mean_shifti) / np.reshape(Nki, (q, 1, 1))
+
+    #full covariance matrix
+    if opt == 1: 
+        variances = sigmai
+    #diagonal covariance matrix
+    if opt == 0: 
+        I = np.identity(dim) 
+        variances = np.einsum("kij,ij -> kij",sigmai,I)
+    
+    #initial log likelihood
+    NLL = llhd(weights,X,q,means,variances)
+    nweights = weights
+    nmeans = means
+    nvariances = variances
+    OLL = NLL+10
+    ite = 0
+    
+    #EM maximisation
+    while abs(NLL-OLL)>=threshold:
+        OLL = NLL
+        #gamma calculation
+        nresponse = responseupdate(nweights,X,q,nmeans,nvariances)
+        #updation
+        nweights = np.einsum("ij -> j",nresponse)/N
+        nmeans = (((nresponse).T) @X) / np.reshape((nweights*N), (q, 1))
+        Nk = N*nweights
+        mean_shift = np.reshape(X, (N, 1, dim) ) - np.reshape(nmeans, (1, q, dim) )
+        sigma = np.einsum("nki,nkj->kij", np.einsum("nk,nki->nki",
+                nresponse, mean_shift),  mean_shift)/ np.reshape(Nk, (q, 1, 1))
+            
+        #full covariance matrix
+        if opt == 1: 
+            nvariances = sigma
+            
+        #full diagonal matrix
+        if opt == 0: 
+            I = np.identity(dim) 
+            nvariances = np.einsum("kij,ij -> kij",sigma,I)
+        
+
+        NLL = llhd(nweights,X,q,nmeans,nvariances)
+        ite+=1
+    print("iterations=%f"%ite)
+    
+    #final parameters
+    fweights = nweights
+    fmeans = nmeans
+    fvariances = nvariances
+    return fweights,fmeans,fvariances
+
+##training
+
+fweights[0],fmeans[0],fvariances[0] = GMMperclass(X1,q[0],threshold,opt)
+fweights[1],fmeans[1],fvariances[1] = GMMperclass(X2,q[1],threshold,opt)
+fweights[2],fmeans[2],fvariances[2] = GMMperclass(X3,q[2],threshold,opt)
+fweights[3],fmeans[3],fvariances[3] = GMMperclass(X4,q[3],threshold,opt)
+fweights[4],fmeans[4],fvariances[4] = GMMperclass(X5,q[4],threshold,opt)
+
+# classification for variable length features
+
+def bayesclfvarlength(X,ppy,nclasses,q,fweights,fmeans,fvariances):
+    def gauss(x,u,v):
+        dim = len(x)
+        num = ((np.reshape((x-u),(1,dim)))@((np.linalg.inv(v))@
+                                   (np.reshape((x-u),(dim,1)))))
+        num = -num/2
+        den = np.sqrt(((2*np.pi)**dim)*(np.linalg.det(v)))
+        return ((np.exp(num))/den)
+    def gaussmat(X,q,means,variances):
+        N,dim = X.shape
+        sigma_inv = np.linalg.inv(variances)     #Inverse of the covariance matrix
+        mean_shift = np.reshape(X, (N, 1, dim) ) - np.reshape(means, (1,q, dim) )
+        norm = np.sqrt(((2*np.pi)**dim)*np.linalg.det(variances)) 
+        #Normalisation term of the Gaussian dist.
+        #Exponential term of the Gaussian
+        expo = np.exp(-0.5*(np.einsum("nkj,nkj->nk", np.einsum("nki,kij->nkj",
+                                         mean_shift, sigma_inv),mean_shift)))  
+        return expo/norm
+    pxy = np.zeros((nclasses,1))
+    pyx = np.zeros((nclasses,1))
+    res = np.zeros((nclasses,1))
+    for i in range(nclasses):
+        pxy[i] = np.prod(np.sum(gaussmat(X,q[i],fmeans[i],fvariances[i])*
+                        fweights[i],axis=1))
+    for i in range(nclasses):
+        pyx[i] = pxy[i]*ppy[i]
+    pyx = pyx/np.sum(pyx)
+    #res[np.argmax(pyx)] = 1
+    #return np.transpose(res)
+    return np.argmax(pyx)
+
+#prediction of training labels
+#reorganising of data points to images
+Xn1 = []
+for i in range(int(X1.shape[0]/36)):
+    Xn1.append(X1[(36*i):(36*(i+1)),:])
+Xn1 = np.array(Xn1)
+Xn2 = []
+for i in range(int(X2.shape[0]/36)):
+    Xn2.append(X2[(36*i):(36*(i+1)),:])
+Xn2 = np.array(Xn2)
+Xn3 = []
+for i in range(int(X3.shape[0]/36)):
+    Xn3.append(X3[(36*i):(36*(i+1)),:])
+Xn3 = np.array(Xn3)
+Xn4 = []
+for i in range(int(X4.shape[0]/36)):
+    Xn4.append(X4[(36*i):(36*(i+1)),:])
+Xn4 = np.array(Xn4)
+Xn5 = []
+for i in range(int(X5.shape[0]/36)):
+    Xn5.append(X5[(36*i):(36*(i+1)),:])
+Xn5 = np.array(Xn5)
+
+
+
+c = 0
+for i in range(Xn1.shape[0]):
+    if bayesclfvarlength(Xn1[i,:,:],ppy,nclasses,q,fweights,fmeans,fvariances) == 0:
+        c += 1
+for i in range(Xn2.shape[0]):
+    if bayesclfvarlength(Xn2[i,:,:],ppy,nclasses,q,fweights,fmeans,fvariances) == 1:
+        c += 1
+for i in range(Xn3.shape[0]):
+    if bayesclfvarlength(Xn3[i,:,:],ppy,nclasses,q,fweights,fmeans,fvariances) == 2:
+        c += 1
+for i in range(Xn4.shape[0]):
+    if bayesclfvarlength(Xn4[i,:,:],ppy,nclasses,q,fweights,fmeans,fvariances) == 3:
+        c += 1
+for i in range(Xn5.shape[0]):
+    if bayesclfvarlength(Xn5[i,:,:],ppy,nclasses,q,fweights,fmeans,fvariances) == 4:
+        c += 1
+
+print('training accuracy =
+  %f'%(c/((X1.shape[0]+X2.shape[0]+X3.shape[0]+X4.shape[0]+X5.shape[0])/36)))
+   
+    
+    
+#####testing
+
+directory = 'Dataset_2B/coast/dev'
+dataX = []
+for filename in os.listdir(directory):
+    f = open(directory+'/'+filename)
+    data =[]
+    for line in f:
+        data.append([float(x) for x in line.strip().split(' ')])
+    dataX+=(data)
+datat1 = np.array(dataX)
+datat1 = np.apply_along_axis(lambda x:np.append(x,np.array([1,0,0,0,0])),1,datat1)
+Xt1 = datat1[:,:-5]
+Xt1 = ((preprocessing.QuantileTransformer(random_state=0)).fit(Xt1)).transform(Xt1)
+directory = 'Dataset_2B/forest/dev'
+dataX = []
+for filename in os.listdir(directory):
+    f = open(directory+'/'+filename)
+    data =[]
+    for line in f:
+        data.append([float(x) for x in line.strip().split(' ')])
+    dataX+=(data)
+datat2 = np.array(dataX)
+datat2 = np.apply_along_axis(lambda x:np.append(x,np.array([0,1,0,0,0])),1,datat2)
+Xt2 = datat2[:,:-5]
+Xt2= ((preprocessing.QuantileTransformer(random_state=0)).fit(Xt2)).transform(Xt2)
+directory = 'Dataset_2B/mountain/dev'
+dataX = []
+for filename in os.listdir(directory):
+    f = open(directory+'/'+filename)
+    data =[]
+    for line in f:
+        data.append([float(x) for x in line.strip().split(' ')])
+    dataX+=(data)
+datat3 = np.array(dataX)
+datat3 = np.apply_along_axis(lambda x:np.append(x,np.array([0,0,1,0,0])),1,datat3)
+Xt3 = datat3[:,:-5]
+Xt3= ((preprocessing.QuantileTransformer(random_state=0)).fit(Xt3)).transform(Xt3)
+directory = 'Dataset_2B/opencountry/dev'
+dataX = []
+for filename in os.listdir(directory):
+    f = open(directory+'/'+filename)
+    data =[]
+    for line in f:
+        data.append([float(x) for x in line.strip().split(' ')])
+    dataX+=(data)
+datat4 = np.array(dataX)
+datat4 = np.apply_along_axis(lambda x:np.append(x,np.array([0,0,0,1,0])),1,datat4)
+Xt4 = datat4[:,:-5]
+Xt4= ((preprocessing.QuantileTransformer(random_state=0)).fit(Xt4)).transform(Xt4)
+directory = 'Dataset_2B/street/dev'
+dataX = []
+for filename in os.listdir(directory):
+    f = open(directory+'/'+filename)
+    data =[]
+    for line in f:
+        data.append([float(x) for x in line.strip().split(' ')])
+    dataX+=(data)
+datat5 = np.array(dataX)
+datat5 = np.apply_along_axis(lambda x:np.append(x,np.array([0,0,0,0,1])),1,datat5)
+Xt5 = datat5[:,:-5]
+Xt5= ((preprocessing.QuantileTransformer(random_state=0)).fit(Xt5)).transform(Xt5)
+
+      
+#prediction of test labels
+#reorganising of data points to images
+Xtn1 = []
+for i in range(int(Xt1.shape[0]/36)):
+    Xtn1.append(Xt1[(36*i):(36*(i+1)),:])
+Xtn1 = np.array(Xtn1)
+Xtn2 = []
+for i in range(int(Xt2.shape[0]/36)):
+    Xtn2.append(Xt2[(36*i):(36*(i+1)),:])
+Xtn2 = np.array(Xtn2)
+Xtn3 = []
+for i in range(int(Xt3.shape[0]/36)):
+    Xtn3.append(Xt3[(36*i):(36*(i+1)),:])
+Xtn3 = np.array(Xtn3)
+Xtn4 = []
+for i in range(int(Xt4.shape[0]/36)):
+    Xtn4.append(Xt4[(36*i):(36*(i+1)),:])
+Xtn4 = np.array(Xtn4)
+Xtn5 = []
+for i in range(int(Xt5.shape[0]/36)):
+    Xtn5.append(Xt5[(36*i):(36*(i+1)),:])
+Xtn5 = np.array(Xtn5)
+
+
+
+ct = 0
+for i in range(Xtn1.shape[0]):
+    if bayesclfvarlength(Xtn1[i,:,:],ppy,nclasses,q,fweights,fmeans,fvariances) == 0:
+        ct += 1
+for i in range(Xtn2.shape[0]):
+    if bayesclfvarlength(Xtn2[i,:,:],ppy,nclasses,q,fweights,fmeans,fvariances) == 1:
+        ct += 1
+for i in range(Xtn3.shape[0]):
+    if bayesclfvarlength(Xtn3[i,:,:],ppy,nclasses,q,fweights,fmeans,fvariances) == 2:
+        ct += 1
+for i in range(Xtn4.shape[0]):
+    if bayesclfvarlength(Xtn4[i,:,:],ppy,nclasses,q,fweights,fmeans,fvariances) == 3:
+        ct += 1
+for i in range(Xtn5.shape[0]):
+    if bayesclfvarlength(Xtn5[i,:,:],ppy,nclasses,q,fweights,fmeans,fvariances) == 4:
+        ct += 1
+
+print('test accuracy
+= %f'%(ct/((Xt1.shape[0]+Xt2.shape[0]+Xt3.shape[0]+Xt4.shape[0]+Xt5.shape[0])/36)))
+
+##confusion matrix
+img_labels = ['coast','forest','mountain','opencountry','street']
+yt = []
+ytp = []
+for i in range(Xn1.shape[0]):
+    yt.append(0)
+    ytp.append(bayesclfvarlength(Xn1[i,:,:],ppy,nclasses,q,fweights,fmeans,
+                fvariances))
+for i in range(Xn2.shape[0]):
+    yt.append(1)
+    ytp.append(bayesclfvarlength(Xn2[i,:,:],ppy,nclasses,q,fweights,fmeans,
+               fvariances))
+for i in range(Xn3.shape[0]):
+    yt.append(2)
+    ytp.append(bayesclfvarlength(Xn3[i,:,:],ppy,nclasses,q,fweights,fmeans,
+              fvariances))
+for i in range(Xn4.shape[0]):
+    yt.append(3)
+    ytp.append(bayesclfvarlength(Xn4[i,:,:],ppy,nclasses,q,fweights,fmeans,
+              fvariances))
+for i in range(Xn5.shape[0]):
+    yt.append(4)
+    ytp.append(bayesclfvarlength(Xn5[i,:,:],ppy,nclasses,q,fweights,fmeans,
+               fvariances))
+
+yte = []
+ytep = []
+for i in range(Xtn1.shape[0]):
+    yte.append(0)
+    ytep.append(bayesclfvarlength(Xtn1[i,:,:],ppy,nclasses,q,fweights,fmeans,
+               fvariances))
+for i in range(Xtn2.shape[0]):
+    yte.append(1)
+    ytep.append(bayesclfvarlength(Xtn2[i,:,:],ppy,nclasses,q,fweights,fmeans,
+               fvariances))
+for i in range(Xtn3.shape[0]):
+    yte.append(2)
+    ytep.append(bayesclfvarlength(Xtn3[i,:,:],ppy,nclasses,q,fweights,fmeans,
+                 fvariances))
+for i in range(Xtn4.shape[0]):
+    yte.append(3)
+    ytep.append(bayesclfvarlength(Xtn4[i,:,:],ppy,nclasses,q,fweights,fmeans,
+                fvariances))
+for i in range(Xtn5.shape[0]):
+    yte.append(4)
+    ytep.append(bayesclfvarlength(Xtn5[i,:,:],ppy,nclasses,q,fweights,fmeans,
+                fvariances))
+
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+
+train_confusion = confusion_matrix(yt,ytp)
+
+test_confusion = confusion_matrix(yte,ytep)
+
+train_tab = ConfusionMatrixDisplay(train_confusion,display_labels =
+['coast','forest','mountain','opencountry','street'] )
+plt.figure(1)
+train_tab.plot()
+plt.title('Training Data')
+test_tab = ConfusionMatrixDisplay(test_confusion,display_labels =
+['coast','forest','mountain','opencountry','street'] )
+plt.figure(2)
+test_tab.plot()
+plt.title('Test Data')
+
+
+
+
+
+
+
+
+
+\end{minted}
