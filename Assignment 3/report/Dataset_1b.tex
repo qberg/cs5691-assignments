@@ -1,0 +1,674 @@
+\section{Pattern classification on Non-linearly Separable Data}
+
+\subsection{MLFFNN with 2 hidden layers}
+
+The given synthetic data is classified using Multi Layer Feed Forward Networks with 2 hidden layers. The Neural Network is built using pytorch. We experimented with the number of nodes in each hidden layer, the optimizers(ADAM \& SGD), the learning rate and the number of epochs. Cross Entropy Loss is used for all the models built since it is known to perform better for conventional classification problems. ReLu Activation layer is used for the hidden layers. Let us look at the difference performance characteristics of the models. Here [x y] represents the number of hidden layer nodes in the 2 hidden layer used.
+
+
+% -----------------------------------------------------------
+{\rowcolors{3}{green!40!yellow!10}{green!0!yellow!30}
+\begin{table}[!h]
+\centering
+\begin{tabular}{ |c|c|c|  }
+\hline
+\rowcolor{lightgray} Model & Training Accuracy & Val Accuracy\\
+\hline
+[2 2]/epoch=20/SGD & 53.28$\%$  & 61.05$\%$  \\ 
+\hline
+[3 3]/epoch=20/SGD & 60.54$\%$  & 71.22$\%$  \\ 
+\hline
+[3 3]/epoch=20/SGD & 71.38$\%$  & 78.68$\%$  \\ 
+\hline
+[3 3]/lr=0.1/epoch=20/SGD & 70.72$\%$  & 86.05$\%$  \\ 
+\hline
+[3 3]/epoch=20/ADAM & 73.35$\%$  & 76.62$\%$  \\ 
+\hline
+[4 4]/epoch=40/ADAM & 52.46$\%$  & 58.13$\%$  \\ 
+\hline
+[4 4]/epoch=500/ADAM & 97.63$\%$  & 100$\%$  \\ 
+\hline
+\end{tabular}
+\caption{Performance of various MLFFNN Models}.
+\label{table:3}
+\end{table}
+}
+
+
+As we increase the number of neurons, we can observe that the accuracy increases. Another big factor is the learning rate. If we have a larger learning rate, then there are lots of oscillations when the solution is converging. If it is too small the solution will take time to converge. Increase the number of epochs results in good increase in performance if the other parameters are tuned properly. ADAM optimizer also seem to work well in our case than SGD. For choosing a good model, we chose a model that doesn't oscillate much during convergence and thus we kept a learning rate of 0.001. Since learning rate is low, the number of epochs for convergence is high. The test accuracy for the model was 97.70$\%$. Another important point to note is that the same neural network model when retested the performance may vary slightly. This is because each time we run it, the weight initialization will be different and thus the optimal value it reaches will also be different. The loss curve, confusion matrix and the decision plot of the best model is given.
+
+Looking at the decision region,we see how neural networks try to capture non-linearities in the data. It performs well in the region wherever data is available for it to learn. Since the test data are also within the training points, we see some good performance. the thin decision region that is shown in light red by the plot between 2 classes could have been avoided if we had more training data.
+
+
+ %--------------------------------------------------------
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[height=3.5in]{Dataset_1b/MLFFNN/Loss.png}
+    \caption{Validation Loss curve}
+    \label{fig:14}
+\end{figure}
+%---------------------------------------------------------
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}[t]{0.5\textwidth}
+        \centering
+        \includegraphics[height=2.5in]{Dataset_1b/MLFFNN/mlffnn_cmatrix_train_data.png}
+        \caption{Confusion Matrix for training data}
+    \end{subfigure}%
+    ~ 
+    \begin{subfigure}[t]{0.5\textwidth}
+        \centering
+        \includegraphics[height=2.5in]{Dataset_1b/MLFFNN/mlffnn_cmatrix_test_data.png}
+        \caption{Confusion Matrix for test data}
+    \end{subfigure}%
+    ~
+    \caption{Confusion Matrix for the best model}
+    \label{fig:13}
+\end{figure}
+
+%----------------------------------------------------------
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[height=3.5in]{Dataset_1b/MLFFNN/mlffnn_decision_plot.png}
+    \caption{Decision plot for the best model}
+    \label{fig:14}
+\end{figure}
+%------------------------------------------------------------
+
+\newpage
+
+\subsubsection{Surface plots for different nodes}
+
+In this section we are going to see surface plots for the nodes of hidden layers and output layers. Totally we have used 8 nodes in the 2 hidden layers and since there are 3 classes we are using 3 nodes in the output layers. So 11 nodes in total. We have used ReLu activation function in the hidden layers and are plotting the values after the activation functions. In the output layer we have not used it, since the cross entropy function of pytorch requires it to be a raw output from the nodes. We plot the outputs after 1,5,20,100 epochs and after convergence (500 epochs). 
+
+Now looking at the surface plots, we can get some understanding of how the neural network takes a decision. Based on the output values of the hidden layers, the values in the output layer changes and based on this the decision changes. This ability to decide, that is the probability to tell that a data point belongs to the class strongly increases with number of epochs.
+
+% ----------------------------------------------------------
+\textbf{Epoch 1}
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}[h]{0.5\textwidth}
+        \centering
+        \includegraphics[height=1.85in]{Dataset_1b/MLFFNN/epoch 1/HL1_1.png}
+    \end{subfigure}%
+    ~ 
+    \begin{subfigure}[h]{0.5\textwidth}
+        \centering
+        \includegraphics[height=1.85in]{Dataset_1b/MLFFNN/epoch 1/HL1_2.png}
+    \end{subfigure}%
+    ~
+    
+    \begin{subfigure}[h]{0.4\textwidth}
+        \centering
+        \includegraphics[height=1.85in]{Dataset_1b/MLFFNN/epoch 1/HL1_3.png}
+    \end{subfigure}
+    ~
+    \begin{subfigure}[h]{0.4\textwidth}
+        \centering
+        \includegraphics[height=1.85in]{Dataset_1b/MLFFNN/epoch 1/HL1_4.png}
+    \end{subfigure}
+    \caption{Surface Plots for Hidden Layer 1 - Epoch 1}
+    \label{fig:13}
+\end{figure}
+
+\newpage
+% ----------------------------------------------------------
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}[h]{0.5\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 1/HL2_1.png}
+    \end{subfigure}%
+    ~ 
+    \begin{subfigure}[h]{0.5\textwidth}
+        \centering
+        \includegraphics[height=1.55in]{Dataset_1b/MLFFNN/epoch 1/HL2_2.png}
+    \end{subfigure}%
+    ~
+    
+    \begin{subfigure}[h]{0.4\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 1/HL2_3.png}
+    \end{subfigure}
+    ~
+    \begin{subfigure}[h]{0.4\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 1/HL2_4.png}
+    \end{subfigure}
+    \caption{Surface Plots for Hidden Layer 2 - Epoch 1}
+    \label{fig:13}
+\end{figure}
+
+% ----------------------------------------------------------
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}[h]{0.5\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 1/OUTPUT_1.png}
+    \end{subfigure}%
+    ~ 
+    \begin{subfigure}[h]{0.5\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 1/OUTPUT_2.png}
+    \end{subfigure}%
+    ~
+    
+    \begin{subfigure}[h]{0.4\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 1/OUTPUT_3.png}
+    \end{subfigure}
+    ~
+    \caption{Surface Plots for Output Layer - Epoch 1}
+    \label{fig:13}
+\end{figure}
+
+% ----------------------------------------------------------
+
+\newpage
+% ----------------------------------------------------------
+\textbf{Epoch 5}
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}[h]{0.5\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 5/HL1_1.png}
+    \end{subfigure}%
+    ~ 
+    \begin{subfigure}[h]{0.5\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 5/HL1_2.png}
+    \end{subfigure}%
+    ~
+    
+    \begin{subfigure}[h]{0.4\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 5/HL1_3.png}
+    \end{subfigure}
+    ~
+    \begin{subfigure}[h]{0.4\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 5/HL1_4.png}
+    \end{subfigure}
+    \caption{Surface Plots for Hidden Layer 1 - Epoch 5}
+    \label{fig:13}
+\end{figure}
+
+
+
+% ----------------------------------------------------------
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}[h]{0.5\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 5/HL2_1.png}
+    \end{subfigure}%
+    ~ 
+    \begin{subfigure}[h]{0.5\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 5/HL2_2.png}
+    \end{subfigure}%
+    ~
+    
+    \begin{subfigure}[h]{0.4\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 5/HL2_3.png}
+    \end{subfigure}
+    ~
+    \begin{subfigure}[h]{0.4\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 5/HL2_4.png}
+    \end{subfigure}
+    \caption{Surface Plots for Hidden Layer 2 - Epoch 5}
+    \label{fig:13}
+\end{figure}
+
+
+
+\newpage
+% ----------------------------------------------------------
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}[h]{0.5\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 5/OUTPUT_1.png}
+    \end{subfigure}%
+    ~ 
+    \begin{subfigure}[h]{0.5\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 5/OUTPUT_2.png}
+    \end{subfigure}%
+    ~
+    
+    \begin{subfigure}[h]{0.4\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 5/OUTPUT_3.png}
+    \end{subfigure}
+    ~
+    \caption{Surface Plots for Output Layer - Epoch 5}
+    \label{fig:13}
+\end{figure}
+
+
+
+
+
+% ----------------------------------------------------------
+\textbf{Epoch 20}
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}[h]{0.5\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 20/HL1_1.png}
+    \end{subfigure}%
+    ~ 
+    \begin{subfigure}[h]{0.5\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 20/HL1_2.png}
+    \end{subfigure}%
+    ~
+    
+    \begin{subfigure}[h]{0.4\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 20/HL1_3.png}
+    \end{subfigure}
+    ~
+    \begin{subfigure}[h]{0.4\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 20/HL1_4.png}
+    \end{subfigure}
+    \caption{Surface Plots for Hidden Layer 1 - Epoch 20}
+    \label{fig:13}
+\end{figure}
+
+\newpage
+% ----------------------------------------------------------
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}[h]{0.5\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 20/HL2_1.png}
+    \end{subfigure}%
+    ~ 
+    \begin{subfigure}[h]{0.5\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 20/HL2_2.png}
+    \end{subfigure}%
+    ~
+    
+    \begin{subfigure}[h]{0.4\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 20/HL2_3.png}
+    \end{subfigure}
+    ~
+    \begin{subfigure}[h]{0.4\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 20/HL2_4.png}
+    \end{subfigure}
+    \caption{Surface Plots for Hidden Layer 2 - Epoch 20}
+    \label{fig:13}
+\end{figure}
+
+% ----------------------------------------------------------
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}[h]{0.5\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 20/OUTPUT_1.png}
+    \end{subfigure}%
+    ~ 
+    \begin{subfigure}[h]{0.5\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 20/OUTPUT_2.png}
+    \end{subfigure}%
+    ~
+    
+    \begin{subfigure}[h]{0.4\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 20/OUTPUT_3.png}
+    \end{subfigure}
+    ~
+    \caption{Surface Plots for Output Layer - Epoch 20}
+    \label{fig:13}
+\end{figure}
+
+
+
+
+\newpage
+
+% ----------------------------------------------------------
+\textbf{Epoch 100}
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}[h]{0.5\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 100/HL1_1.png}
+    \end{subfigure}%
+    ~ 
+    \begin{subfigure}[h]{0.5\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 100/HL1_2.png}
+    \end{subfigure}%
+    ~
+    
+    \begin{subfigure}[h]{0.4\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 100/HL1_3.png}
+    \end{subfigure}
+    ~
+    \begin{subfigure}[h]{0.4\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 100/HL1_4.png}
+    \end{subfigure}
+    \caption{Surface Plots for Hidden Layer 1 - Epoch 100}
+    \label{fig:13}
+\end{figure}
+
+% ----------------------------------------------------------
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}[h]{0.5\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 100/HL2_1.png}
+    \end{subfigure}%
+    ~ 
+    \begin{subfigure}[h]{0.5\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 100/HL2_2.png}
+    \end{subfigure}%
+    ~
+    
+    \begin{subfigure}[h]{0.4\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 100/HL2_3.png}
+    \end{subfigure}
+    ~
+    \begin{subfigure}[h]{0.4\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 100/HL2_4.png}
+    \end{subfigure}
+    \caption{Surface Plots for Hidden Layer 2 - Epoch 100}
+    \label{fig:13}
+\end{figure}
+
+\newpage
+% ----------------------------------------------------------
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}[h]{0.5\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 100/OUTPUT_1.png}
+    \end{subfigure}%
+    ~ 
+    \begin{subfigure}[h]{0.5\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 100/OUTPUT_2.png}
+    \end{subfigure}%
+    ~
+    
+    \begin{subfigure}[h]{0.4\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 100/OUTPUT_3.png}
+    \end{subfigure}
+    ~
+    \caption{Surface Plots for Output Layer - Epoch 100}
+    \label{fig:13}
+\end{figure}
+
+% ----------------------------------------------------------
+\textbf{Epoch 500}
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}[h]{0.5\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 500/HL1_1.png}
+    \end{subfigure}%
+    ~ 
+    \begin{subfigure}[h]{0.5\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 500/HL1_2.png}
+    \end{subfigure}%
+    ~
+    
+    \begin{subfigure}[h]{0.4\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 500/HL1_3.png}
+    \end{subfigure}
+    ~
+    \begin{subfigure}[h]{0.4\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 500/HL1_4.png}
+    \end{subfigure}
+    \caption{Surface Plots for Hidden Layer 1 - Epoch 500}
+    \label{fig:13}
+\end{figure}
+
+% ----------------------------------------------------------
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}[h]{0.5\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 500/HL2_1.png}
+    \end{subfigure}%
+    ~ 
+    \begin{subfigure}[h]{0.5\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 500/HL2_2.png}
+    \end{subfigure}%
+    ~
+    
+    \begin{subfigure}[h]{0.4\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 500/HL2_3.png}
+    \end{subfigure}
+    ~
+    \begin{subfigure}[h]{0.4\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 500/HL2_4.png}
+    \end{subfigure}
+    \caption{Surface Plots for Hidden Layer 2 - Epoch 500}
+    \label{fig:13}
+\end{figure}
+
+\newpage
+% ----------------------------------------------------------
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}[h]{0.5\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 500/OUTPUT_1.png}
+    \end{subfigure}%
+    ~ 
+    \begin{subfigure}[h]{0.5\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 500/OUTPUT_2.png}
+    \end{subfigure}%
+    ~
+    
+    \begin{subfigure}[h]{0.4\textwidth}
+        \centering
+        \includegraphics[height=1.5in]{Dataset_1b/MLFFNN/epoch 500/OUTPUT_3.png}
+    \end{subfigure}
+    ~
+    \caption{Surface Plots for Output Layer - Epoch 500}
+    \label{fig:13}
+\end{figure}
+
+% --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+\subsection{Non-Linear SVM with One-Against-The-Rest Approach}
+
+
+The given synthetic data is classified using Support Vector Classifier with One Vs the Rest Approach. Sklearn was used to implement the method. It was tried with polynomial and gaussian kernels. Let us look at the performance of the various models by changing different parameters. The gaussian kernel models seem to perform well than the polynomial kernels. The test accuracy of the best model with gaussian kernels observed was 97.78$\%$. On the other hand the best model with polynomial kernels was giving a test accuracy of 53.4$\%$.
+
+For the SVM Model with gaussian kernel we experimented with the regularization parameter since there were not much to experiment with. As the value of C increases, we see that the training accuracy increases slightly. However it doesn't seem to affect the validation accuracy much. The parameter C takes care of regularization and it is inversely proportional to the strength of regularization. 
+
+For the SVM Model with polynomial kernels we experimented with the degree. It was noticed that the performance was very bad. The model was not able to capture the non linearity even in the high dimension. 
+
+% -----------------------------------------------------------
+{\rowcolors{3}{green!40!yellow!10}{green!0!yellow!30}
+\begin{table}[!h]
+\centering
+\begin{tabular}{ |c|c|c|  }
+\hline
+\rowcolor{lightgray} Model & Training Accuracy & Val Accuracy\\
+\hline
+C=1 & 98.34$\%$  & 100$\%$  \\ 
+\hline
+C=0.5 & 97.84$\%$  & 100$\%$  \\ 
+\hline
+C=2 & 99.17$\%$  & 100$\%$  \\ 
+\hline
+C=4 & 99.5$\%$  & 100$\%$  \\ 
+\hline
+\end{tabular}
+\caption{Performance of various SVM Models with gaussian kernels}.
+\label{table:3}
+\end{table}
+}
+
+\newpage
+% -----------------------------------------------------------
+{\rowcolors{3}{green!40!yellow!10}{green!0!yellow!30}
+\begin{table}[!h]
+\centering
+\begin{tabular}{ |c|c|c|  }
+\hline
+\rowcolor{lightgray} Model & Training Accuracy & Val Accuracy\\
+\hline
+Deg=2 & 36.17$\%$  & 31.12$\%$  \\ 
+\hline
+Deg=3 & 51.34$\%$  & 64.45$\%$  \\ 
+\hline
+Deg=5 & 50.67$\%$  & 62.23$\%$  \\ 
+\hline
+Deg=10 & 34.34$\%$  & 33.34$\%$  \\ 
+\hline
+Deg=11 & 54.67$\%$  & 57.77$\%$  \\ 
+\hline
+\end{tabular}
+\caption{Performance of various SVM Models with polynomials kernels}.
+\label{table:3}
+\end{table}
+}
+
+\subsubsection{Plots for Gaussian Kernel SVM}
+
+%---------------------------------------------------------
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}[t]{0.5\textwidth}
+        \centering
+        \includegraphics[height=2.5in]{Dataset_1b/SVM/SVC_Gaussian_cmatrix_train_data.png}
+        \caption{Confusion Matrix for training data}
+    \end{subfigure}%
+    ~ 
+    \begin{subfigure}[t]{0.5\textwidth}
+        \centering
+        \includegraphics[height=2.5in]{Dataset_1b/SVM/SVC_Gaussian_cmatrix_test_data.png}
+        \caption{Confusion Matrix for test data}
+    \end{subfigure}%
+    ~
+    \caption{Confusion Matrix for the best model}
+    \label{fig:13}
+\end{figure}
+
+%----------------------------------------------------------
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[height=3.5in]{Dataset_1b/SVM/SVC_Gaussian.png}
+    \caption{Decision plot for the best model}
+    \label{fig:14}
+\end{figure}
+
+
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}[t]{0.3\textwidth}
+        \centering
+        \includegraphics[height=1.75in]{Dataset_1b/SVM/test1.png}
+    \end{subfigure}%
+    ~ 
+    \begin{subfigure}[t]{0.3\textwidth}
+        \centering
+        \includegraphics[height=1.75in]{Dataset_1b/SVM/test2.png}
+    \end{subfigure}%
+    ~
+    \begin{subfigure}[t]{0.3\textwidth}
+        \centering
+        \includegraphics[height=1.75in]{Dataset_1b/SVM/test3.png}
+    \end{subfigure}%
+    \caption{Various Decision Plots for 3 classifiers used in One Vs RestApproach}
+    \label{fig:13}
+\end{figure}
+
+
+
+\newpage
+\subsubsection{Plots for Polynomial Kernel SVM}
+
+%---------------------------------------------------------
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}[t]{0.5\textwidth}
+        \centering
+        \includegraphics[height=2.5in]{Dataset_1b/SVM/SVC_poly_cmatrix_train_data.png}
+        \caption{Confusion Matrix for training data}
+    \end{subfigure}%
+    ~ 
+    \begin{subfigure}[t]{0.5\textwidth}
+        \centering
+        \includegraphics[height=2.5in]{Dataset_1b/SVM/SVC_poly_cmatrix_test_data.png}
+        \caption{Confusion Matrix for test data}
+    \end{subfigure}%
+    ~
+    \caption{Confusion Matrix for the best model}
+    \label{fig:13}
+\end{figure}
+
+%----------------------------------------------------------
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[height=3.5in]{Dataset_1b/SVM/SVC_Poly.png}
+    \caption{Decision plot for the best model}
+    \label{fig:14}
+\end{figure}
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}[t]{0.33\textwidth}
+        \centering
+        \includegraphics[height=1.75in]{Dataset_1b/SVM/test4.png}
+    \end{subfigure}%
+    ~ 
+    \begin{subfigure}[t]{0.33\textwidth}
+        \centering
+        \includegraphics[height=1.75in]{Dataset_1b/SVM/test5.png}
+    \end{subfigure}%
+    ~
+    \begin{subfigure}[t]{0.33\textwidth}
+        \centering
+        \includegraphics[height=1.75in]{Dataset_1b/SVM/test6.png}
+    \end{subfigure}%
+    \caption{Various Decision Plots for 3 classifiers used in One V sRestApproach}
+    \label{fig:13}
+\end{figure}

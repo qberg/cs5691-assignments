@@ -1,0 +1,404 @@
+\section{Static Pattern Classification on Real World Dataset 2A}
+
+
+\subsection{\textcolor{teal}{Python Code}}
+
+\begin{minted}[frame=lines, linenos, fontsize=\large]
+{python}
+
+
+# In[1]:
+# Import Relevant Libraries
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix
+from mlxtend.plotting import plot_confusion_matrix
+from sklearn.metrics import accuracy_score
+
+import torch
+from tqdm import tqdm
+
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+from functools import partial
+
+#############################################################################
+
+# In[2]:
+#############################################################################
+# train data
+coast_train_data = np.array(pd.read_csv('datasets/Dataset_2a/coast
+                                        /train.csv'))[:,1:]
+forest_train_data = np.array(pd.read_csv('datasets/Dataset_2a/forest
+                                         /train.csv'))[:,1:]
+mountain_train_data =np.array(pd.read_csv('datasets/Dataset_2a/mountain
+                                          /train.csv'))[:,1:]
+country_train_data = np.array(pd.read_csv('datasets/Dataset_2a/opencountry
+                                          /train.csv'))[:,1:]
+street_train_data = np.array(pd.read_csv('datasets/Dataset_2a/street
+                                          /train.csv'))[:,1:]
+
+# populate class vector
+target_0 = np.zeros((coast_train_data.shape[0],1))
+target_1 = np.ones((forest_train_data.shape[0],1))
+target_2 = np.ones((mountain_train_data.shape[0],1))*2
+target_3 = np.ones((country_train_data.shape[0],1))*3
+target_4 = np.ones((street_train_data.shape[0],1))*4
+
+X_train = np.array(np.concatenate((coast_train_data,forest_train_data,
+             mountain_train_data,country_train_data,street_train_data),
+             axis=0),dtype=float)
+y_train = np.array(np.concatenate((target_0,target_1,target_2,
+                       target_3,target_4),axis=0),dtype=float)
+y_train = np.reshape(y_train,(np.size(y_train,)))
+
+# test & val data
+coast_test_data = np.array(pd.read_csv('datasets/Dataset_2a/coast
+                                       /dev.csv'))[:,1:]
+forest_test_data = np.array(pd.read_csv('datasets/Dataset_2a/forest
+                                       /dev.csv'))[:,1:]
+mountain_test_data = np.array(pd.read_csv('datasets/Dataset_2a/mountain
+                                        /dev.csv'))[:,1:]
+country_test_data = np.array(pd.read_csv('datasets/Dataset_2a/opencountry
+                                        /dev.csv'))[:,1:]
+street_test_data = np.array(pd.read_csv('datasets/Dataset_2a/street
+                                         /dev.csv'))[:,1:]
+
+# populate class vector
+target_0 = np.zeros((coast_test_data.shape[0],1))
+target_1 = np.ones((forest_test_data.shape[0],1))
+target_2 = np.ones((mountain_test_data.shape[0],1))*2
+target_3 = np.ones((country_test_data.shape[0],1))*3
+target_4 = np.ones((street_test_data.shape[0],1))*4
+
+X_dev = np.array(np.concatenate((coast_test_data,forest_test_data,
+                 mountain_test_data,country_test_data,
+                 street_test_data),axis=0),dtype=float)
+y_dev = np.array(np.concatenate((target_0,target_1,
+                 target_2,target_3,target_4),axis=0),dtype=float)
+y_dev = np.reshape(y_dev,(np.size(y_dev,)))
+##############################################################################
+
+# In[3]:
+# Split training data
+# length of data for fit
+train_len = int(np.shape(X_train)[0])
+
+index1 = np.random.choice([True,False],size=np.shape(X_dev)[0])
+index2 = ~index1
+
+X_val = X_dev[index1,:]
+X_test = X_dev[index2,:]
+
+y_val = y_dev[index1]
+y_test = y_dev[index2]
+
+val_len = int(np.shape(X_val)[0])
+test_len = int(np.shape(X_test)[0])
+
+
+##############################################################################
+
+# In[4]:
+
+# Build MLFFNN with 2 hidden layers using pytorch
+
+class Net(nn.Module):
+    def __init__(self):
+        super(Net, self).__init__()
+        
+        # in_features = input dimension out_features -> to be tuned
+        self.fc1 = nn.Linear(in_features=24, out_features=500)  
+        
+        # out_features -> to be tuned 
+        self.fc2 = nn.Linear(in_features=500, out_features=250)
+        
+        # out_features = number of classes to be predicted
+        self.fc3 = nn.Linear(in_features=250, out_features=5)
+        
+    def forward(self, x):
+        x = F.relu(self.fc1(x))
+        out1 = x
+        x = F.relu(self.fc2(x))
+        out2 = x
+        x = self.fc3(x)
+        return x,out1,out2
+
+# In[5]:
+    
+# Initialize neural network class
+net = Net()
+
+# # transfer the model to GPU if available
+# if torch.cuda.is_available():
+#     print("using GPU")
+#     net = net.cuda()
+    
+# In[6]:
+
+########################################################################
+# Define a Loss function and optimizer
+
+# Both variables are to be tuned
+num_epochs = 500        # desired number of training epochs.
+learning_rate = 0.001
+
+# loss function and optimizers can be changed
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(net.parameters(), lr=learning_rate,
+                        weight_decay=5e-4)
+
+num_params = np.sum([p.nelement() for p in net.parameters()])
+print(num_params, ' parameters')
+
+# In[7]:
+# create dataloader for loading data
+
+class myDataset(torch.utils.data.Dataset):
+  
+  #'Characterizes a dataset for PyTorch'
+  def __init__(self,X,y,total_samples):
+        #'Initialization'
+        self.X = X
+        self.y = y
+        self.total_samples = total_samples
+  
+  def __len__(self):
+        #'Denotes the total number of samples'
+        return self.total_samples
+
+  def __getitem__(self, index):
+        #'Generates one sample of data'
+        # Select sample
+        # Load data and get label
+        
+        x_data = self.X[index,:]
+        y_data = self.y[index]
+        
+        return x_data,y_data
+
+# batch size can be changed to make epochs faster
+params = {'batch_size': 32,
+          'shuffle': False,
+          'num_workers': 0}
+
+# training dataset
+training_set = myDataset(X_train,y_train,train_len)
+
+training_generator = torch.utils.data.DataLoader(training_set, 
+                                                  **params)
+
+# validation dataset
+validation_set = myDataset(X_val,y_val,val_len)
+validation_generator = torch.utils.data.DataLoader(validation_set,
+                                                    **params)
+
+# test dataset
+test_set = myDataset(X_test,y_test,test_len)
+
+test_generator = torch.utils.data.DataLoader(test_set,
+                                             **params)
+
+# In[8]:
+    
+def validation(model, loader):
+    total_loss = 0
+    accuracy = []
+    tq = partial(tqdm, position=0, leave=True)
+    
+    model.eval()
+    with torch.no_grad():
+        for X, y in tq(loader):
+          X = X.float()
+          y = y.long()
+          
+          # if torch.cuda.is_available():
+          #   X = X.cuda()
+          #   y = y.cuda()
+        
+          prediction,_,_ = model(X)
+          
+          loss = criterion(prediction, y)
+          
+          prediction = F.softmax(prediction)
+          
+          acc = np.mean(np.array((torch.argmax(prediction,1) == y)))*100
+          
+          
+          total_loss += loss.item()
+          accuracy.append(acc)
+
+    # print('Validation Accuracy: ', np.mean(np.array(accuracy)))   
+    return total_loss/len(loader),np.mean(np.array(accuracy))
+
+
+# In[9]:
+    
+def test(model, loader):
+    y_pred = []
+    accuracy = []
+    tq = partial(tqdm, position=0, leave=True)
+    
+    model.eval()
+    with torch.no_grad():
+        for X, y in tq(loader):
+          X = X.float()
+          y = y.long()
+          
+          # if torch.cuda.is_available():
+          #   X = X.cuda()
+          #   y = y.cuda()
+        
+          prediction,_,_ = model(X)
+          
+          prediction = F.softmax(prediction)
+          
+          acc = np.mean(np.array((torch.argmax(prediction,1) == y)))*100
+
+          accuracy.append(acc)
+
+          prediction = torch.argmax(prediction,1)
+          y_pred = y_pred + list(np.array(prediction))
+
+    print('Test Accuracy: ', np.mean(np.array(accuracy)))   
+    return y_pred,np.mean(np.array(accuracy))
+    
+
+# In[10]:
+    
+tq = partial(tqdm, position=0, leave=True)
+
+print('Start Training')
+train_loss_list = []
+train_accuracy_list = []
+
+validation_loss_list = []
+validation_accuracy_list = []
+
+for epoch in range(0,num_epochs):
+  print('epoch ', epoch + 1)
+  loss = 0
+  train_accuracy = []
+  
+  for X,y in tq(training_generator):
+    
+    X = X.float()
+    y = y.long()
+    # y = torch.squeeze(y,1)
+    
+    # if torch.cuda.is_available():
+    #     X = X.cuda()
+    #     y = y.cuda()
+   
+    optimizer.zero_grad()
+    
+    output,out1,out2 = net(X)
+    loss = criterion(output,y)
+    
+    loss.backward()
+    optimizer.step()
+
+    loss += loss.item()
+    
+    prediction = F.softmax(output)
+    
+    accuracy = np.mean(np.array((torch.argmax(prediction,1) == y)))*100
+    train_accuracy.append(accuracy) 
+
+ 
+  
+  train_loss_list.append([loss/len(training_generator)])
+  # print(loss/len(training_generator))
+  
+  train_accuracy_list.append(np.mean(np.array(train_accuracy)))
+  
+  val_loss,val_accuracy = validation(net, validation_generator)
+
+  validation_loss_list.append(val_loss)
+  validation_accuracy_list.append(val_accuracy)
+  
+  # if epoch == 0 or epoch == 4 or epoch == 19 or epoch == 99 or epoch == num_epochs-1:
+  #     torch.save(net.state_dict(), 'models/model-'+str(epoch)+'.pth')
+ 
+      
+print(train_accuracy_list[-1])
+print(validation_accuracy_list[-1])
+  
+# In[]:
+net = Net()
+
+# Import saved Model
+net.load_state_dict(torch.load('models/model-499.pth'))
+net.eval()
+  
+# plt.plot(train_loss_list,label='Training Loss')
+plt.plot(validation_loss_list,label='Validation Loss')
+plt.xlabel('Number of Epochs')
+plt.ylabel('Loss')
+plt.title('Loss curve')
+plt.legend()
+plt.plot()
+
+# In[12]:
+    
+plt.plot(train_accuracy_list,label='Training Accuracy')
+plt.plot(validation_accuracy_list,label='Validation Accuracy')
+plt.xlabel('Number of Epochs')
+plt.ylabel('Accuracy')
+plt.title('Accuracy curve')
+plt.legend()
+plt.show()
+
+# In[13]:
+    
+y_pred, test_accuracy = test(net,test_generator)
+c_matrix  = confusion_matrix(y_test, y_pred)
+
+afig, ax = plot_confusion_matrix(conf_mat=c_matrix,figsize=(7,7)
+                                    ,cmap=plt.cm.RdBu)
+ax.set(title = "Confusion Matrix for test data")
+
+y_pred, train_accuracy = test(net,training_generator)
+
+c_matrix  = confusion_matrix(y_train, y_pred)
+
+afig, ax = plot_confusion_matrix(conf_mat=c_matrix,figsize=(7,7)
+                                         ,cmap=plt.cm.RdBu)
+ax.set(title = "Confusion Matrix for train data")
+
+########################################################################
+# In[15]:
+    
+# Non-linear SVM
+from sklearn.svm import SVC
+from sklearn.multiclass import OneVsRestClassifier
+
+# Gaussian Kernel
+clf = OneVsRestClassifier(SVC(C=15,kernel='rbf')).fit(X_train, y_train)
+y_pred = clf.predict(X_train)
+train_accuracy = accuracy_score(y_train,y_pred)*100
+print("train accuracy: " , train_accuracy)
+
+c_matrix  = confusion_matrix(y_train, y_pred)
+
+afig, ax = plot_confusion_matrix(conf_mat=c_matrix,figsize=(7,7),
+                                  cmap=plt.cm.RdBu)
+ax.set(title = "Confusion Matrix for train data")
+y_pred = clf.predict(X_val)
+val_accuracy = accuracy_score(y_val,y_pred)*100
+print("validation accuracy: " , val_accuracy)
+
+y_pred = clf.predict(X_test)
+test_accuracy = accuracy_score(y_test,y_pred)*100
+print("test accuracy: " , test_accuracy)
+
+c_matrix  = confusion_matrix(y_test, y_pred)
+
+afig, ax = plot_confusion_matrix(conf_mat=c_matrix,figsize=(7,7),
+                                 cmap=plt.cm.RdBu)
+ax.set(title = "Confusion Matrix for test data")
+
+
+\end{minted}

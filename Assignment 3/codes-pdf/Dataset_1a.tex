@@ -1,0 +1,850 @@
+\section{Pattern classification on linearly separable data}
+\subsection{\textcolor{teal}{Python Code}}
+
+\begin{minted}[frame=lines, linenos, fontsize=\large]
+{python}
+
+#1A part I perceptron
+
+import pandas as pd
+import numpy as np
+from matplotlib import pyplot as plt
+import matplotlib.cm as cm
+import matplotlib.colors as colors
+from tqdm import tqdm
+
+class perceptron():
+    def __init__(self,data1,data2):
+        self.data1 = data1
+        self.data2 = data2
+        self.data = np.concatenate((data1,data2),axis=0)
+        self.labels = [data1[0,-1],data2[0,-1]]
+        self.weights = None
+        self.error_epoch = None
+    def train(self,eta,epochs):
+        y1 = np.ones((len(self.data1),1))
+        y2 = -1*np.ones((len(self.data2),1))
+        data = self.data
+        N,dim = data[:,:-1].shape
+        X = np.concatenate((np.ones((N,1)),data[:,:-1]),axis=1)
+        y = np.concatenate((y1,y2),axis=0)
+        Xy = np.concatenate((X,np.reshape(y,(len(y),1))),axis=1)
+        w = np.random.rand(1,1+dim)
+        e = 1
+        error_epoch = []
+        
+        pbar = tqdm(total=epochs,position=0,leave=True)
+        while e<=epochs:
+            e += 1
+            pbar.update(1)
+            np.random.shuffle(Xy)
+            for i in range(N):
+                w = w + ((eta/2)*(Xy[i,-1]-np.sign(Xy[i,:-1]@w.T))*Xy[i,:-1])
+            error = 0
+            for i in range(N):
+                error += (1/2)*abs((Xy[i,-1]-np.sign(Xy[i,:-1]@w.T)))*
+                (Xy[i,:-1]@w.T)*Xy[i,-1]
+            error_epoch.append(-error)
+        pbar.close()
+        self.weights = w
+        self.error_epoch = np.array(error_epoch)
+        return None
+    def classify(self,data):
+        w = self.weights
+        labels = self.labels
+        l = [0]+labels 
+        return np.array([l[int(i)] for i in np.sign(np.concatenate((np.ones(
+        (len(data),1)),data),axis=1)@w.T)])
+    def plot_error(self):
+        plt.plot(self.error_epoch)
+        return None
+
+f = pd.read_csv('17/train.csv',header = None)
+data_tr0 = (f[f[2]==0]).to_numpy()
+data_tr1 = (f[f[2]==1]).to_numpy()
+data_tr2 = (f[f[2]==2]).to_numpy()
+data_tr3 = (f[f[2]==3]).to_numpy()
+f = pd.read_csv('17/dev.csv',header = None)
+data_te0 = (f[f[2]==0]).to_numpy()
+data_te1 = (f[f[2]==1]).to_numpy()
+data_te2 = (f[f[2]==2]).to_numpy()
+data_te3 = (f[f[2]==3]).to_numpy()   
+
+eta = 0.1
+epochs = 10
+#01
+p01 = perceptron(data_tr0,data_tr1)
+p01.train(eta,epochs)
+data_tr01 = np.concatenate((data_tr0,data_tr1),axis=0)
+train_acc_01 = 100*((data_tr01[:,-1]==p01.classify(data_tr01[:,:-1]))
+                    .mean())
+print('train_acc_01 = %f'%(train_acc_01))
+data_te01 = np.concatenate((data_te0,data_te1),axis=0)
+test_acc_01 = 100*((data_te01[:,-1]==p01.classify(data_te01[:,:-1]))
+                  .mean())
+print('test_acc_01 = %f'%(test_acc_01))
+
+#02
+p02 = perceptron(data_tr0,data_tr2)
+p02.train(eta,epochs)
+data_tr02 = np.concatenate((data_tr0,data_tr2),axis=0)
+train_acc_02 = 100*((data_tr02[:,-1]==p02.classify(data_tr02[:,:-1]))
+                    .mean())
+print('train_acc_02 = %f'%(train_acc_02))
+data_te02 = np.concatenate((data_te0,data_te2),axis=0)
+test_acc_02 = 100*((data_te02[:,-1]==p02.classify(data_te02[:,:-1]))
+                .mean())
+print('test_acc_02 = %f'%(test_acc_02))
+
+#03
+p03 = perceptron(data_tr0,data_tr3)
+p03.train(eta,epochs)
+data_tr03 = np.concatenate((data_tr0,data_tr3),axis=0)
+train_acc_03 = 100*((data_tr03[:,-1]==p03.classify(data_tr03[:,:-1]))
+                   .mean())
+print('train_acc_03 = %f'%(train_acc_03))
+data_te03 = np.concatenate((data_te0,data_te3),axis=0)
+test_acc_03 = 100*((data_te03[:,-1]==p03.classify(data_te03[:,:-1]))
+                  .mean())
+print('test_acc_03 = %f'%(test_acc_03))
+#12
+p12 = perceptron(data_tr1,data_tr2)
+p12.train(eta,epochs)
+data_tr12 = np.concatenate((data_tr1,data_tr2),axis=0)
+train_acc_12 = 100*((data_tr12[:,-1]==p12.classify(data_tr12[:,:-1]))
+                    .mean())
+print('train_acc_12 = %f'%(train_acc_12))
+data_te12 = np.concatenate((data_te1,data_te2),axis=0)
+test_acc_12 = 100*((data_te12[:,-1]==p12.classify(data_te12[:,:-1]))
+                  .mean())
+print('test_acc_12 = %f'%(test_acc_12))
+#13
+p13 = perceptron(data_tr1,data_tr3)
+p13.train(eta,epochs)
+data_tr13 = np.concatenate((data_tr1,data_tr3),axis=0)
+train_acc_13 = 100*((data_tr13[:,-1]==p13.classify(data_tr13[:,:-1]))
+                   .mean())
+print('train_acc_13 = %f'%(train_acc_13))
+data_te13 = np.concatenate((data_te1,data_te3),axis=0)
+test_acc_13 = 100*((data_te13[:,-1]==p13.classify(data_te13[:,:-1]))
+                   .mean())
+print('test_acc_13 = %f'%(test_acc_13))
+#23
+p23 = perceptron(data_tr2,data_tr3)
+p23.train(eta,epochs)
+data_tr23 = np.concatenate((data_tr2,data_tr3),axis=0)
+train_acc_23 = 100*((data_tr23[:,-1]==p23.classify(data_tr23[:,:-1]))
+                   .mean())
+print('train_acc_23 = %f'%(train_acc_23))
+data_te23 = np.concatenate((data_te2,data_te3),axis=0)
+test_acc_23 = 100*((data_te23[:,-1]==p23.classify(data_te23[:,:-1]))
+                  .mean())
+print('test_acc_23 = %f'%(test_acc_23))
+
+#plots
+X_train = data_tr01
+X_test = data_te01
+# Decision Region Plots #####################################################
+# define bounds of the domain
+min1, max1 = X_train[:, 0].min()-1, X_train[:, 0].max()+1
+min2, max2 = X_train[:, 1].min()-1, X_train[:, 1].max()+1
+
+# define the x and y scale
+x1_grid = np.arange(min1, max1, 0.1)
+x2_grid = np.arange(min2, max2, 0.1)
+
+x1_grid, x2_grid = np.meshgrid(x1_grid, x2_grid)
+
+c1, c2 = x1_grid.flatten(), x1_grid.flatten()
+c1, c2 = x1_grid.reshape((len(c1), 1)), x2_grid.reshape((len(c2), 1))
+
+x = np.hstack((c1,c2))
+
+y_pred = p01.classify(x)
+
+x3_grid = y_pred.reshape(x1_grid.shape)
+
+
+
+fig = plt.figure(1,figsize=(7.5,4))
+ax = fig.add_subplot(111)
+cmap =plt.get_cmap('Paired',2)
+cs = ax.contourf(x1_grid, x2_grid, x3_grid, cmap=cmap)
+ax.scatter(X_train[:,0],X_train[:,1],marker='x',
+        color = 'blue',label='train data')
+ax.scatter(X_test[:,0],X_test[:,1],marker='x',
+        color='black',label='test data')
+ax.legend()
+ax.set_xlabel('x1',fontsize=10)
+ax.set_ylabel('x2',fontsize=10)
+ax.set_title('Perceptron : Labels (0,1)', fontsize=10)
+cbar = plt.colorbar(cm.ScalarMappable(cmap=cmap),
+                    ticks =[0.25,0.75])
+cbar.ax.invert_yaxis()
+cbar.set_ticklabels(['0','1'])
+
+X_train = data_tr02
+X_test = data_te02
+# Decision Region Plots #####################################################
+# define bounds of the domain
+min1, max1 = X_train[:, 0].min()-1, X_train[:, 0].max()+1
+min2, max2 = X_train[:, 1].min()-1, X_train[:, 1].max()+1
+
+# define the x and y scale
+x1_grid = np.arange(min1, max1, 0.1)
+x2_grid = np.arange(min2, max2, 0.1)
+
+x1_grid, x2_grid = np.meshgrid(x1_grid, x2_grid)
+
+c1, c2 = x1_grid.flatten(), x1_grid.flatten()
+c1, c2 = x1_grid.reshape((len(c1), 1)),
+        x2_grid.reshape((len(c2), 1))
+
+x = np.hstack((c1,c2))
+
+y_pred = p02.classify(x)
+
+x3_grid = y_pred.reshape(x1_grid.shape)
+
+
+
+fig = plt.figure(2,figsize=(7.5,4))
+ax = fig.add_subplot(111)
+cmap =plt.get_cmap('Paired',2)
+cs = ax.contourf(x1_grid, x2_grid, x3_grid, cmap=cmap)
+ax.scatter(X_train[:,0],X_train[:,1],marker='x',
+           color = 'blue',label='train data')
+ax.scatter(X_test[:,0],X_test[:,1],marker='x',
+             color='black',label='test data')
+ax.legend()
+ax.set_xlabel('x1',fontsize=10)
+ax.set_ylabel('x2',fontsize=10)
+ax.set_title('Perceptron : Labels (0,2)', fontsize=10)
+cbar = plt.colorbar(cm.ScalarMappable(cmap=cmap),ticks =[0.25,0.75])
+cbar.ax.invert_yaxis()
+cbar.set_ticklabels(['0','2'])
+
+X_train = data_tr03
+X_test = data_te03
+# Decision Region Plots #####################################################
+# define bounds of the domain
+min1, max1 = X_train[:, 0].min()-1, X_train[:, 0].max()+1
+min2, max2 = X_train[:, 1].min()-1, X_train[:, 1].max()+1
+
+# define the x and y scale
+x1_grid = np.arange(min1, max1, 0.1)
+x2_grid = np.arange(min2, max2, 0.1)
+
+x1_grid, x2_grid = np.meshgrid(x1_grid, x2_grid)
+
+c1, c2 = x1_grid.flatten(), x1_grid.flatten()
+c1, c2 = x1_grid.reshape((len(c1), 1)),
+            x2_grid.reshape((len(c2), 1))
+
+x = np.hstack((c1,c2))
+
+y_pred = p03.classify(x)
+
+x3_grid = y_pred.reshape(x1_grid.shape)
+
+
+
+fig = plt.figure(3,figsize=(7.5,4))
+ax = fig.add_subplot(111)
+cmap =plt.get_cmap('Paired',2)
+cs = ax.contourf(x1_grid, x2_grid, x3_grid, cmap=cmap)
+ax.scatter(X_train[:,0],X_train[:,1],marker='x',
+            color = 'blue',label='train data')
+ax.scatter(X_test[:,0],X_test[:,1],marker='x',
+           color='black',label='test data')
+ax.legend()
+ax.set_xlabel('x1',fontsize=10)
+ax.set_ylabel('x2',fontsize=10)
+ax.set_title('Perceptron : Labels (0,3)', fontsize=10)
+cbar = plt.colorbar(cm.ScalarMappable(cmap=cmap),
+        ticks =[0.25,0.75])
+cbar.ax.invert_yaxis()
+cbar.set_ticklabels(['0','3'])
+
+X_train = data_tr12
+X_test = data_te12
+# Decision Region Plots #####################################################
+# define bounds of the domain
+min1, max1 = X_train[:, 0].min()-1, X_train[:, 0].max()+1
+min2, max2 = X_train[:, 1].min()-1, X_train[:, 1].max()+1
+
+# define the x and y scale
+x1_grid = np.arange(min1, max1, 0.1)
+x2_grid = np.arange(min2, max2, 0.1)
+
+x1_grid, x2_grid = np.meshgrid(x1_grid, x2_grid)
+
+c1, c2 = x1_grid.flatten(), x1_grid.flatten()
+c1, c2 = x1_grid.reshape((len(c1), 1)),
+           x2_grid.reshape((len(c2), 1))
+
+x = np.hstack((c1,c2))
+
+y_pred = p12.classify(x)
+
+x3_grid = y_pred.reshape(x1_grid.shape)
+
+
+
+fig = plt.figure(4,figsize=(7.5,4))
+ax = fig.add_subplot(111)
+cmap =plt.get_cmap('Paired',2)
+cs = ax.contourf(x1_grid, x2_grid, x3_grid, cmap=cmap)
+ax.scatter(X_train[:,0],X_train[:,1],marker='x',
+           color = 'blue',label='train data')
+ax.scatter(X_test[:,0],X_test[:,1],marker='x',
+            color='black',label='test data')
+ax.legend()
+ax.set_xlabel('x1',fontsize=10)
+ax.set_ylabel('x2',fontsize=10)
+ax.set_title('Perceptron : Labels (1,2)', fontsize=10)
+cbar = plt.colorbar(cm.ScalarMappable(cmap=cmap),
+                    ticks =[0.25,0.75])
+cbar.ax.invert_yaxis()
+cbar.set_ticklabels(['1','2'])
+
+X_train = data_tr13
+X_test = data_te13
+# Decision Region Plots #####################################################
+# define bounds of the domain
+min1, max1 = X_train[:, 0].min()-1, X_train[:, 0].max()+1
+min2, max2 = X_train[:, 1].min()-1, X_train[:, 1].max()+1
+
+# define the x and y scale
+x1_grid = np.arange(min1, max1, 0.1)
+x2_grid = np.arange(min2, max2, 0.1)
+
+x1_grid, x2_grid = np.meshgrid(x1_grid, x2_grid)
+
+c1, c2 = x1_grid.flatten(), x1_grid.flatten()
+c1, c2 = x1_grid.reshape((len(c1), 1)), 
+                    x2_grid.reshape((len(c2), 1))
+
+x = np.hstack((c1,c2))
+
+y_pred = p13.classify(x)
+
+x3_grid = y_pred.reshape(x1_grid.shape)
+
+
+
+fig = plt.figure(5,figsize=(7.5,4))
+ax = fig.add_subplot(111)
+cmap =plt.get_cmap('Paired',2)
+cs = ax.contourf(x1_grid, x2_grid, x3_grid, cmap=cmap)
+ax.scatter(X_train[:,0],X_train[:,1],marker='x',
+            color = 'blue',label='train data')
+ax.scatter(X_test[:,0],X_test[:,1],marker='x', 
+             color='black',label='test data')
+ax.legend()
+ax.set_xlabel('x1',fontsize=10)
+ax.set_ylabel('x2',fontsize=10)
+ax.set_title('Perceptron : Labels (1,3)', fontsize=10)
+cbar = plt.colorbar(cm.ScalarMappable(cmap=cmap),
+          ticks =[0.25,0.75])
+cbar.ax.invert_yaxis()
+cbar.set_ticklabels(['1','3'])
+
+X_train = data_tr23
+X_test = data_te23
+# Decision Region Plots #####################################################
+# define bounds of the domain
+min1, max1 = X_train[:, 0].min()-1, X_train[:, 0].max()+1
+min2, max2 = X_train[:, 1].min()-1, X_train[:, 1].max()+1
+
+# define the x and y scale
+x1_grid = np.arange(min1, max1, 0.1)
+x2_grid = np.arange(min2, max2, 0.1)
+
+x1_grid, x2_grid = np.meshgrid(x1_grid, x2_grid)
+
+c1, c2 = x1_grid.flatten(), x1_grid.flatten()
+c1, c2 = x1_grid.reshape((len(c1), 1)), 
+          x2_grid.reshape((len(c2), 1))
+
+x = np.hstack((c1,c2))
+
+y_pred = p23.classify(x)
+
+x3_grid = y_pred.reshape(x1_grid.shape)
+
+
+
+fig = plt.figure(6,figsize=(7.5,4))
+ax = fig.add_subplot(111)
+cmap =plt.get_cmap('Paired',2)
+cs = ax.contourf(x1_grid, x2_grid, x3_grid, cmap=cmap)
+ax.scatter(X_train[:,0],X_train[:,1],marker='x',
+               color = 'blue',label='train data')
+ax.scatter(X_test[:,0],X_test[:,1],marker='x',
+            color='black',label='test data')
+ax.legend()
+ax.set_xlabel('x1',fontsize=10)
+ax.set_ylabel('x2',fontsize=10)
+ax.set_title('Perceptron : Labels (2,3)', fontsize=10)
+cbar = plt.colorbar(cm.ScalarMappable(cmap=cmap),
+                ticks =[0.25,0.75])
+cbar.ax.invert_yaxis()
+cbar.set_ticklabels(['2','3'])
+
+#1A part II MLFNN
+
+from sklearn import preprocessing
+import pandas as pd
+import numpy as np
+import torch as tc
+from matplotlib import pyplot as plt
+import matplotlib.cm as cm
+import matplotlib.colors as colors
+from tqdm import tqdm
+
+f = pd.read_csv('17/train.csv',header = None)
+data_tr = f.to_numpy()
+f = pd.read_csv('17/dev.csv',header = None)
+data_te = f.to_numpy()
+#1 to K categorial 1 hot vector transformation
+labelenc = preprocessing.LabelBinarizer()  
+Xtr = (tc.from_numpy(data_tr[:,:-1])).float()
+ytr = (tc.from_numpy(labelenc.fit_transform(data_tr[:,-1])))
+                    .float()
+Xte = (tc.from_numpy(data_te[:,:-1])).float()
+yte = (tc.from_numpy(labelenc.fit_transform(data_te[:,-1])))
+                    .float()
+
+epochs = 10000
+
+inp_l = 2
+hid_l = 4
+out_l = 4
+#activation fxns : Sigmoid,Tanh,SOftmax,ReLU,ELU,SELU,CELU,
+mlfnn = tc.nn.Sequential(tc.nn.Linear(inp_l,hid_l),
+                         tc.nn.ELU(),tc.nn.Linear(hid_l,out_l))
+MSE = tc.nn.MSELoss()
+optimizer = tc.optim.SGD(mlfnn.parameters(), lr=0.001)
+from tqdm import tqdm
+epochs = 10000
+pbar = tqdm(total=epochs,position=0,leave=True)
+for i in range(epochs):
+    
+    optimizer.zero_grad() 
+    ytrp = mlfnn(Xtr)
+    loss = MSE(ytrp,ytr)
+    loss.backward()
+    optimizer.step()
+    pbar.update(1)
+pbar.close()
+tr_acc = 100*((data_tr[:,-1] == labelenc.
+                    inverse_transform(mlfnn(Xtr))).mean())
+te_acc = 100*((data_te[:,-1] == labelenc.
+                     inverse_transform(mlfnn(Xte))).mean())
+print('train acc = %f'%(tr_acc))
+print('test acc = %f'%(te_acc))
+
+#plotting
+X_train = data_tr[:,:-1]
+X_test = data_te[:,:-1]
+# Decision Region Plots #####################################################
+# define bounds of the domain
+min1, max1 = X_train[:, 0].min()-1, X_train[:, 0].max()+1
+min2, max2 = X_train[:, 1].min()-1, X_train[:, 1].max()+1
+
+# define the x and y scale
+x1_grid = np.arange(min1, max1, 0.1)
+x2_grid = np.arange(min2, max2, 0.1)
+
+x1_grid, x2_grid = np.meshgrid(x1_grid, x2_grid)
+
+c1, c2 = x1_grid.flatten(), x1_grid.flatten()
+c1, c2 = x1_grid.reshape((len(c1), 1)), x2_grid.
+                           reshape((len(c2), 1))
+
+x = np.hstack((c1,c2))
+
+y_pred = labelenc.inverse_transform(mlfnn(tc.from_numpy(x)
+                                    .float()))
+
+x3_grid = y_pred.reshape(x1_grid.shape)
+
+
+fig = plt.figure(1,figsize=(7.5,4))
+ax = fig.add_subplot(111)
+cmap =plt.get_cmap('Paired',4)
+cs = ax.contourf(x1_grid, x2_grid, x3_grid, cmap=cmap)
+ax.scatter(X_train[:,0],X_train[:,1],marker='x',
+                color = 'blue',label='train data')
+ax.scatter(X_test[:,0],X_test[:,1],marker='x',
+                  color='black',label='test data')
+ax.legend()
+ax.set_xlabel('x1',fontsize=10)
+ax.set_ylabel('x2',fontsize=10)
+ax.set_title('MLFNN : All Four Labels', fontsize=10)
+cbar = plt.colorbar(cm.ScalarMappable(cmap=cmap),
+                  ticks=np.linspace(0.125,1-0.125,4))
+cbar.ax.invert_yaxis()
+cbar.set_ticklabels(['0','1','2','3'])
+
+#1A part III linear svm
+import numpy as np
+import pandas as pd
+from sklearn.svm import SVC
+from matplotlib import pyplot as plt
+import matplotlib.cm as cm
+import matplotlib.colors as colors
+from tqdm import tqdm
+
+f = pd.read_csv('17/train.csv',header = None)
+data_tr0 = (f[f[2]==0]).to_numpy()
+data_tr1 = (f[f[2]==1]).to_numpy()
+data_tr2 = (f[f[2]==2]).to_numpy()
+data_tr3 = (f[f[2]==3]).to_numpy()
+f = pd.read_csv('17/dev.csv',header = None)
+data_te0 = (f[f[2]==0]).to_numpy()
+data_te1 = (f[f[2]==1]).to_numpy()
+data_te2 = (f[f[2]==2]).to_numpy()
+data_te3 = (f[f[2]==3]).to_numpy()
+
+#01
+data_tr01 = np.concatenate((data_tr0,data_tr1),axis=0)
+data_te01 = np.concatenate((data_te0,data_te1),axis=0)
+svc01 = SVC(kernel='linear')
+svc01.fit(data_tr01[:,:-1],data_tr01[:,-1])
+train_acc_01 = 100*((data_tr01[:,-1]==svc01.
+                    predict(data_tr01[:,:-1])).mean())
+print('train_acc_01 = %f'%(train_acc_01))
+test_acc_01 = 100*((data_te01[:,-1]==svc01.
+                    predict(data_te01[:,:-1])).mean())
+print('test_acc_01 = %f'%(test_acc_01))
+
+#02
+data_tr02 = np.concatenate((data_tr0,data_tr2),axis=0)
+data_te02 = np.concatenate((data_te0,data_te2),axis=0)
+svc02 = SVC(kernel='linear')
+svc02.fit(data_tr02[:,:-1],data_tr02[:,-1])
+train_acc_02 = 100*((data_tr02[:,-1]==svc02.
+                    predict(data_tr02[:,:-1])).mean())
+print('train_acc_02 = %f'%(train_acc_02))
+test_acc_02 = 100*((data_te02[:,-1]==svc02.
+                    predict(data_te02[:,:-1])).mean())
+print('test_acc_02 = %f'%(test_acc_02))
+
+#03
+data_tr03 = np.concatenate((data_tr0,data_tr3),axis=0)
+data_te03 = np.concatenate((data_te0,data_te3),axis=0)
+svc03 = SVC(kernel='linear')
+svc03.fit(data_tr03[:,:-1],data_tr03[:,-1])
+train_acc_03 = 100*((data_tr03[:,-1]==svc03.
+                    predict(data_tr03[:,:-1])).mean())
+print('train_acc_03 = %f'%(train_acc_03))
+test_acc_03 = 100*((data_te03[:,-1]==svc03.
+                     predict(data_te03[:,:-1])).mean())
+print('test_acc_03 = %f'%(test_acc_03))
+
+#12
+data_tr12 = np.concatenate((data_tr1,data_tr2),axis=0)
+data_te12 = np.concatenate((data_te1,data_te2),axis=0)
+svc12 = SVC(kernel='linear')
+svc12.fit(data_tr12[:,:-1],data_tr12[:,-1])
+train_acc_12 = 100*((data_tr12[:,-1]==svc12.
+                      predict(data_tr12[:,:-1])).mean())
+print('train_acc_12 = %f'%(train_acc_12))
+test_acc_12 = 100*((data_te12[:,-1]==svc12.
+                       predict(data_te12[:,:-1])).mean())
+print('test_acc_12 = %f'%(test_acc_12))
+
+#13
+data_tr13 = np.concatenate((data_tr1,data_tr3),axis=0)
+data_te13 = np.concatenate((data_te1,data_te3),axis=0)
+svc13 = SVC(kernel='linear')
+svc13.fit(data_tr13[:,:-1],data_tr13[:,-1])
+train_acc_13 = 100*((data_tr13[:,-1]==svc13.
+                       predict(data_tr13[:,:-1])).mean())
+print('train_acc_13 = %f'%(train_acc_13))
+test_acc_13 = 100*((data_te13[:,-1]==svc13.
+                       predict(data_te13[:,:-1])).mean())
+print('test_acc_13 = %f'%(test_acc_13))
+
+#23
+data_tr23 = np.concatenate((data_tr2,data_tr3),axis=0)
+data_te23 = np.concatenate((data_te2,data_te3),axis=0)
+svc23 = SVC(kernel='linear')
+svc23.fit(data_tr23[:,:-1],data_tr23[:,-1])
+train_acc_23 = 100*((data_tr23[:,-1]==svc23.
+                      predict(data_tr23[:,:-1])).mean())
+print('train_acc_23 = %f'%(train_acc_23))
+test_acc_23 = 100*((data_te23[:,-1]==svc23.
+                      predict(data_te23[:,:-1])).mean())
+print('test_acc_23 = %f'%(test_acc_23))
+
+#plots
+X_train = data_tr01
+X_test = data_te01
+# Decision Region Plots #####################################################
+# define bounds of the domain
+min1, max1 = X_train[:, 0].min()-1, X_train[:, 0].max()+1
+min2, max2 = X_train[:, 1].min()-1, X_train[:, 1].max()+1
+
+# define the x and y scale
+x1_grid = np.arange(min1, max1, 0.1)
+x2_grid = np.arange(min2, max2, 0.1)
+
+x1_grid, x2_grid = np.meshgrid(x1_grid, x2_grid)
+
+c1, c2 = x1_grid.flatten(), x1_grid.flatten()
+c1, c2 = x1_grid.reshape((len(c1), 1)), x2_grid.
+                         reshape((len(c2), 1))
+
+x = np.hstack((c1,c2))
+
+y_pred = svc01.predict(x)
+
+x3_grid = y_pred.reshape(x1_grid.shape)
+
+suppvec = svc01.support_vectors_
+
+fig = plt.figure(1,figsize=(7.5,4))
+ax = fig.add_subplot(111)
+cmap =plt.get_cmap('Paired',2)
+cs = ax.contourf(x1_grid, x2_grid, x3_grid, cmap=cmap)
+ax.scatter(X_train[:,0],X_train[:,1],marker='x',
+                     color = 'blue',label='train data')
+ax.scatter(suppvec[:,0],suppvec[:,1],marker='x',
+                  color='yellow',label='support vector')
+ax.scatter(X_test[:,0],X_test[:,1],marker='x',
+                         color='black',label='test data')
+ax.legend()
+ax.set_xlabel('x1',fontsize=10)
+ax.set_ylabel('x2',fontsize=10)
+ax.set_title('SVM : Labels (0,1)', fontsize=10)
+cbar = plt.colorbar(cm.ScalarMappable(cmap=cmap),
+                             ticks =[0.25,0.75])
+cbar.ax.invert_yaxis()
+cbar.set_ticklabels(['0','1'])
+
+
+
+X_train = data_tr02
+X_test = data_te02
+# Decision Region Plots #####################################################
+# define bounds of the domain
+min1, max1 = X_train[:, 0].min()-1, X_train[:, 0].max()+1
+min2, max2 = X_train[:, 1].min()-1, X_train[:, 1].max()+1
+
+# define the x and y scale
+x1_grid = np.arange(min1, max1, 0.1)
+x2_grid = np.arange(min2, max2, 0.1)
+
+x1_grid, x2_grid = np.meshgrid(x1_grid, x2_grid)
+
+c1, c2 = x1_grid.flatten(), x1_grid.flatten()
+c1, c2 = x1_grid.reshape((len(c1), 1)), 
+             x2_grid.reshape((len(c2), 1))
+
+x = np.hstack((c1,c2))
+
+y_pred = svc02.predict(x)
+
+x3_grid = y_pred.reshape(x1_grid.shape)
+
+suppvec = svc02.support_vectors_
+
+fig = plt.figure(2,figsize=(7.5,4))
+ax = fig.add_subplot(111)
+cmap =plt.get_cmap('Paired',2)
+cs = ax.contourf(x1_grid, x2_grid, x3_grid, cmap=cmap)
+ax.scatter(X_train[:,0],X_train[:,1],marker='x',
+             color = 'blue',label='train data')
+ax.scatter(suppvec[:,0],suppvec[:,1],marker='x',
+            color='yellow',label='support vector')
+ax.scatter(X_test[:,0],X_test[:,1],marker='x',
+                  color='black',label='test data')
+ax.legend()
+ax.set_xlabel('x1',fontsize=10)
+ax.set_ylabel('x2',fontsize=10)
+ax.set_title('SVM : Labels (0,2)', fontsize=10)
+cbar = plt.colorbar(cm.ScalarMappable(cmap=cmap),
+                            ticks =[0.25,0.75])
+cbar.ax.invert_yaxis()
+cbar.set_ticklabels(['0','2'])
+
+X_train = data_tr03
+X_test = data_te03
+# Decision Region Plots #####################################################
+# define bounds of the domain
+min1, max1 = X_train[:, 0].min()-1, X_train[:, 0].max()+1
+min2, max2 = X_train[:, 1].min()-1, X_train[:, 1].max()+1
+
+# define the x and y scale
+x1_grid = np.arange(min1, max1, 0.1)
+x2_grid = np.arange(min2, max2, 0.1)
+
+x1_grid, x2_grid = np.meshgrid(x1_grid, x2_grid)
+
+c1, c2 = x1_grid.flatten(), x1_grid.flatten()
+c1, c2 = x1_grid.reshape((len(c1), 1)), x2_grid.
+                            reshape((len(c2), 1))
+
+x = np.hstack((c1,c2))
+
+y_pred = svc03.predict(x)
+
+x3_grid = y_pred.reshape(x1_grid.shape)
+
+suppvec = svc03.support_vectors_
+
+fig = plt.figure(3,figsize=(7.5,4))
+ax = fig.add_subplot(111)
+cmap =plt.get_cmap('Paired',2)
+cs = ax.contourf(x1_grid, x2_grid, x3_grid, cmap=cmap)
+ax.scatter(X_train[:,0],X_train[:,1],marker='x',
+                color = 'blue',label='train data')
+ax.scatter(suppvec[:,0],suppvec[:,1],marker='x',
+            color='yellow',label='support vector')
+ax.scatter(X_test[:,0],X_test[:,1],marker='x',
+                  color='black',label='test data')
+ax.legend()
+ax.set_xlabel('x1',fontsize=10)
+ax.set_ylabel('x2',fontsize=10)
+ax.set_title('SVM : Labels (0,3)', fontsize=10)
+cbar = plt.colorbar(cm.ScalarMappable(cmap=cmap),
+                             ticks =[0.25,0.75])
+cbar.ax.invert_yaxis()
+cbar.set_ticklabels(['0','3'])
+
+X_train = data_tr12
+X_test = data_te12
+# Decision Region Plots #####################################################
+# define bounds of the domain
+min1, max1 = X_train[:, 0].min()-1, X_train[:, 0].max()+1
+min2, max2 = X_train[:, 1].min()-1, X_train[:, 1].max()+1
+
+# define the x and y scale
+x1_grid = np.arange(min1, max1, 0.1)
+x2_grid = np.arange(min2, max2, 0.1)
+
+x1_grid, x2_grid = np.meshgrid(x1_grid, x2_grid)
+
+c1, c2 = x1_grid.flatten(), x1_grid.flatten()
+c1, c2 = x1_grid.reshape((len(c1), 1)), x2_grid.
+                           reshape((len(c2), 1))
+
+x = np.hstack((c1,c2))
+
+y_pred = svc12.predict(x)
+
+x3_grid = y_pred.reshape(x1_grid.shape)
+
+suppvec = svc12.support_vectors_
+
+fig = plt.figure(4,figsize=(7.5,4))
+ax = fig.add_subplot(111)
+cmap =plt.get_cmap('Paired',2)
+cs = ax.contourf(x1_grid, x2_grid, x3_grid, cmap=cmap)
+ax.scatter(X_train[:,0],X_train[:,1],marker='x',
+               color = 'blue',label='train data')
+ax.scatter(suppvec[:,0],suppvec[:,1],marker='x',
+             color='yellow',label='support vector')
+ax.scatter(X_test[:,0],X_test[:,1],marker='x',
+                  color='black',label='test data')
+ax.legend()
+ax.set_xlabel('x1',fontsize=10)
+ax.set_ylabel('x2',fontsize=10)
+ax.set_title('SVM : Labels (1,2)', fontsize=10)
+cbar = plt.colorbar(cm.ScalarMappable(cmap=cmap),
+                             ticks =[0.25,0.75])
+cbar.ax.invert_yaxis()
+cbar.set_ticklabels(['1','2'])
+
+X_train = data_tr13
+X_test = data_te13
+# Decision Region Plots #####################################################
+# define bounds of the domain
+min1, max1 = X_train[:, 0].min()-1, X_train[:, 0].max()+1
+min2, max2 = X_train[:, 1].min()-1, X_train[:, 1].max()+1
+
+# define the x and y scale
+x1_grid = np.arange(min1, max1, 0.1)
+x2_grid = np.arange(min2, max2, 0.1)
+
+x1_grid, x2_grid = np.meshgrid(x1_grid, x2_grid)
+
+c1, c2 = x1_grid.flatten(), x1_grid.flatten()
+c1, c2 = x1_grid.reshape((len(c1), 1)), x2_grid.
+                           reshape((len(c2), 1))
+
+x = np.hstack((c1,c2))
+
+y_pred = svc13.predict(x)
+
+x3_grid = y_pred.reshape(x1_grid.shape)
+
+suppvec = svc13.support_vectors_
+
+fig = plt.figure(5,figsize=(7.5,4))
+ax = fig.add_subplot(111)
+cmap =plt.get_cmap('Paired',2)
+cs = ax.contourf(x1_grid, x2_grid, x3_grid, cmap=cmap)
+ax.scatter(X_train[:,0],X_train[:,1],marker='x',
+                       color = 'blue',label='train data')
+ax.scatter(suppvec[:,0],suppvec[:,1],marker='x',
+                   color='yellow',label='support vector')
+ax.scatter(X_test[:,0],X_test[:,1],marker='x',
+                        color='black',label='test data')
+ax.legend()
+ax.set_xlabel('x1',fontsize=10)
+ax.set_ylabel('x2',fontsize=10)
+ax.set_title('SVM : Labels (1,3)', fontsize=10)
+cbar = plt.colorbar(cm.ScalarMappable(cmap=cmap),ticks =[0.25,0.75])
+cbar.ax.invert_yaxis()
+cbar.set_ticklabels(['1','3'])
+
+X_train = data_tr23
+X_test = data_te23
+# Decision Region Plots #####################################################
+# define bounds of the domain
+min1, max1 = X_train[:, 0].min()-1, X_train[:, 0].max()+1
+min2, max2 = X_train[:, 1].min()-1, X_train[:, 1].max()+1
+
+# define the x and y scale
+x1_grid = np.arange(min1, max1, 0.1)
+x2_grid = np.arange(min2, max2, 0.1)
+
+x1_grid, x2_grid = np.meshgrid(x1_grid, x2_grid)
+
+c1, c2 = x1_grid.flatten(), x1_grid.flatten()
+c1, c2 = x1_grid.reshape((len(c1), 1)), x2_grid.
+                           reshape((len(c2), 1))
+
+x = np.hstack((c1,c2))
+
+y_pred = svc23.predict(x)
+
+x3_grid = y_pred.reshape(x1_grid.shape)
+
+suppvec = svc23.support_vectors_
+
+fig = plt.figure(6,figsize=(7.5,4))
+ax = fig.add_subplot(111)
+cmap =plt.get_cmap('Paired',2)
+cs = ax.contourf(x1_grid, x2_grid, x3_grid, cmap=cmap)
+ax.scatter(X_train[:,0],X_train[:,1],marker='x',
+                color = 'blue',label='train data')
+ax.scatter(suppvec[:,0],suppvec[:,1],marker='x',
+            color='yellow',label='support vector')
+ax.scatter(X_test[:,0],X_test[:,1],marker='x',
+                  color='black',label='test data')
+ax.legend()
+ax.set_xlabel('x1',fontsize=10)
+ax.set_ylabel('x2',fontsize=10)
+ax.set_title('SVM : Labels (2,3)', fontsize=10)
+cbar = plt.colorbar(cm.ScalarMappable(cmap=cmap),
+                             ticks =[0.25,0.75])
+cbar.ax.invert_yaxis()
+cbar.set_ticklabels(['2','3'])
+
+
+\end{minted}
